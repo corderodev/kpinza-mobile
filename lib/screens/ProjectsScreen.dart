@@ -8,11 +8,11 @@ class ProjectsScreen extends StatefulWidget {
 }
 
 class _ProjectsScreenState extends State<ProjectsScreen> {
-  List<String> projects = [];
+  List<Project> projects = [];
 
   void _createProject(String projectName, String projectDescription) {
     setState(() {
-      projects.add('$projectName: $projectDescription');
+      projects.add(Project(name: projectName, description: projectDescription));
     });
   }
 
@@ -25,10 +25,16 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
     );
   }
 
+  void _deleteProject(Project project) {
+    setState(() {
+      projects.remove(project);
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: ProjectList(projects: projects),
+      body: ProjectList(projects: projects, onDelete: _deleteProject),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
           _showCreateProjectForm(context);
@@ -96,9 +102,11 @@ class _CreateProjectFormState extends State<CreateProjectForm> {
 }
 
 class ProjectList extends StatelessWidget {
-  final List<String> projects;
+  final List<Project> projects;
+  final void Function(Project) onDelete;
 
-  const ProjectList({super.key, required this.projects});
+  const ProjectList(
+      {super.key, required this.projects, required this.onDelete});
 
   @override
   Widget build(BuildContext context) {
@@ -111,19 +119,17 @@ class ProjectList extends StatelessWidget {
     return ListView.builder(
       itemCount: projects.length,
       itemBuilder: (context, index) {
-        final projectInfo = projects[index].split(':');
-        final projectName = projectInfo[0].trim();
-        final projectDescription = projectInfo[1].trim();
+        final project = projects[index];
 
         return ListTile(
-          title: Text(projectName),
+          title: Text(project.name),
           onTap: () {
             Navigator.push(
               context,
               MaterialPageRoute(
                 builder: (context) => ProjectDetailScreen(
-                  projectName: projectName,
-                  projectDescription: projectDescription,
+                  project: project,
+                  onDelete: onDelete,
                 ),
               ),
             );
@@ -135,20 +141,29 @@ class ProjectList extends StatelessWidget {
 }
 
 class ProjectDetailScreen extends StatelessWidget {
-  final String projectName;
-  final String projectDescription;
+  final Project project;
+  final void Function(Project) onDelete;
 
   const ProjectDetailScreen({
     super.key,
-    required this.projectName,
-    required this.projectDescription,
+    required this.project,
+    required this.onDelete,
   });
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(projectName),
+        title: Text(project.name),
+        actions: [
+          IconButton(
+            icon: Icon(Icons.delete),
+            onPressed: () {
+              onDelete(project);
+              Navigator.pop(context);
+            },
+          ),
+        ],
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -164,7 +179,7 @@ class ProjectDetailScreen extends StatelessWidget {
             ),
             const Padding(padding: EdgeInsets.all(4)),
             Text(
-              projectDescription,
+              project.description,
               style: const TextStyle(fontSize: 16),
             ),
           ],
@@ -172,4 +187,11 @@ class ProjectDetailScreen extends StatelessWidget {
       ),
     );
   }
+}
+
+class Project {
+  final String name;
+  final String description;
+
+  Project({required this.name, required this.description});
 }
