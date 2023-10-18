@@ -111,10 +111,65 @@ class ProjectList extends StatelessWidget {
     return ListView.builder(
       itemCount: projects.length,
       itemBuilder: (context, index) {
+        final projectInfo = projects[index].split(':');
+        final projectName = projectInfo[0].trim();
+        final projectDescription = projectInfo[1].trim();
+
         return ListTile(
-          title: Text(projects[index]),
+          title: Text(projectName),
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => ProjectDetailScreen(
+                  projectName: projectName,
+                  projectDescription: projectDescription,
+                ),
+              ),
+            );
+          },
         );
       },
+    );
+  }
+}
+
+class ProjectDetailScreen extends StatelessWidget {
+  final String projectName;
+  final String projectDescription;
+
+  const ProjectDetailScreen({
+    super.key,
+    required this.projectName,
+    required this.projectDescription,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(projectName),
+      ),
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+            const Text(
+              'Descripción del proyecto:',
+              style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.blue),
+            ),
+            const Padding(padding: EdgeInsets.all(4)),
+            Text(
+              projectDescription,
+              style: const TextStyle(fontSize: 16),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
