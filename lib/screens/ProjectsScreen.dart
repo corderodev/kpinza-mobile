@@ -9,7 +9,6 @@ class ProjectsScreen extends StatefulWidget {
 
 class _ProjectsScreenState extends State<ProjectsScreen> {
   List<String> projects = [];
-  bool isCreatingProject = false;
 
   void _createProject(String projectName, String projectDescription) {
     setState(() {
@@ -17,33 +16,24 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
     });
   }
 
+  Future<void> _showCreateProjectForm(BuildContext context) async {
+    await showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return CreateProjectForm(onSubmit: _createProject);
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Column(
-        children: <Widget>[
-          CreateProjectForm(
-            onSubmit: _createProject,
-            isVisible: isCreatingProject,
-          ),
-          Expanded(
-            child: ProjectList(projects: projects),
-          ),
-          Align(
-            alignment: Alignment.bottomRight,
-            child: Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: FloatingActionButton(
-                onPressed: () {
-                  setState(() {
-                    isCreatingProject = !isCreatingProject;
-                  });
-                },
-                child: const Icon(Icons.add),
-              ),
-            ),
-          ),
-        ],
+      body: ProjectList(projects: projects),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          _showCreateProjectForm(context);
+        },
+        child: const Icon(Icons.add),
       ),
     );
   }
@@ -51,10 +41,8 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
 
 class CreateProjectForm extends StatefulWidget {
   final void Function(String projectName, String projectDescription) onSubmit;
-  final bool isVisible;
 
-  const CreateProjectForm(
-      {super.key, required this.onSubmit, required this.isVisible});
+  const CreateProjectForm({super.key, required this.onSubmit});
 
   @override
   _CreateProjectFormState createState() => _CreateProjectFormState();
@@ -66,9 +54,10 @@ class _CreateProjectFormState extends State<CreateProjectForm> {
 
   @override
   Widget build(BuildContext context) {
-    return Visibility(
-      visible: widget.isVisible,
-      child: Column(
+    return AlertDialog(
+      title: const Text('Crear Proyecto'),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
         children: <Widget>[
           TextFormField(
             controller: _nameController,
@@ -79,19 +68,29 @@ class _CreateProjectFormState extends State<CreateProjectForm> {
             decoration:
                 const InputDecoration(labelText: 'Descripción del proyecto'),
           ),
-          ElevatedButton(
-            onPressed: () {
-              final projectName = _nameController.text;
-              final projectDescription = _descriptionController.text;
-              widget.onSubmit(projectName, projectDescription);
-
-              _nameController.clear();
-              _descriptionController.clear();
-            },
-            child: const Text('Crear Proyecto'),
-          ),
         ],
       ),
+      actions: <Widget>[
+        TextButton(
+          onPressed: () {
+            Navigator.of(context).pop();
+          },
+          child: const Text('Cancelar'),
+        ),
+        ElevatedButton(
+          onPressed: () {
+            final projectName = _nameController.text;
+            final projectDescription = _descriptionController.text;
+            widget.onSubmit(projectName, projectDescription);
+
+            _nameController.clear();
+            _descriptionController.clear();
+
+            Navigator.of(context).pop();
+          },
+          child: const Text('Crear Proyecto'),
+        ),
+      ],
     );
   }
 }
