@@ -121,19 +121,28 @@ class ProjectList extends StatelessWidget {
       itemBuilder: (context, index) {
         final project = projects[index];
 
-        return ListTile(
-          title: Text(project.name),
-          onTap: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => ProjectDetailScreen(
-                  project: project,
-                  onDelete: onDelete,
+        return Card(
+          margin: const EdgeInsets.all(8.0),
+          child: ListTile(
+            title: Text(project.name),
+            trailing: IconButton(
+              icon: const Icon(Icons.delete),
+              onPressed: () {
+                onDelete(project);
+              },
+            ),
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => ProjectDetailScreen(
+                    project: project,
+                    onDelete: onDelete,
+                  ),
                 ),
-              ),
-            );
-          },
+              );
+            },
+          ),
         );
       },
     );
