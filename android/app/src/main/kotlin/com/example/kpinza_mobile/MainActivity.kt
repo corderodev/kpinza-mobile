@@ -1,0 +1,6 @@
+package com.example.kpinza_mobile
+
+import io.flutter.embedding.android.FlutterActivity
+
+class MainActivity: FlutterActivity() {
+}
