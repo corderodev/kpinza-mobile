@@ -206,6 +206,35 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
     );
   }
 
+  void _deleteStage(Stage stage) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Eliminar Etapa'),
+          content: const Text('¿Seguro que quieres eliminar esta etapa?'),
+          actions: <Widget>[
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              child: const Text('Cancelar'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                setState(() {
+                  widget.project.stages.remove(stage);
+                });
+                Navigator.of(context).pop();
+              },
+              child: const Text('Eliminar'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -259,8 +288,15 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
               child: ListView.builder(
                 itemCount: widget.project.stages.length,
                 itemBuilder: (context, index) {
+                  final stage = widget.project.stages[index];
                   return ListTile(
-                    title: Text(widget.project.stages[index].name),
+                    title: Text(stage.name),
+                    trailing: IconButton(
+                      icon: const Icon(Icons.delete),
+                      onPressed: () {
+                        _deleteStage(stage);
+                      },
+                    ),
                   );
                 },
               ),
