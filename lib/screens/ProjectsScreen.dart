@@ -140,27 +140,80 @@ class ProjectList extends StatelessWidget {
   }
 }
 
-class ProjectDetailScreen extends StatelessWidget {
+class ProjectDetailScreen extends StatefulWidget {
   final Project project;
   final void Function(Project) onDelete;
 
   const ProjectDetailScreen({
-    super.key,
+    Key? key,
     required this.project,
     required this.onDelete,
-  });
+  }) : super(key: key);
+
+  @override
+  _ProjectDetailScreenState createState() => _ProjectDetailScreenState();
+}
+
+class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
+  void _showCreateStageForm(BuildContext context) {
+    final TextEditingController stageNameController = TextEditingController();
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Crear Etapa'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[
+              TextFormField(
+                controller: stageNameController,
+                decoration:
+                    const InputDecoration(labelText: 'Nombre de la etapa'),
+              ),
+            ],
+          ),
+          actions: <Widget>[
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              child: const Text('Cancelar'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                final stageName = stageNameController.text;
+                if (stageName.isNotEmpty) {
+                  setState(() {
+                    widget.project.stages.add(Stage(name: stageName));
+                  });
+                }
+                Navigator.of(context).pop();
+              },
+              child: const Text('Crear Etapa'),
+            ),
+          ],
+        );
+      },
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(project.name),
+        title: Text(widget.project.name),
         actions: [
           IconButton(
-            icon: Icon(Icons.delete),
+            icon: const Icon(Icons.delete),
             onPressed: () {
-              onDelete(project);
+              widget.onDelete(widget.project);
               Navigator.pop(context);
+            },
+          ),
+          IconButton(
+            icon: const Icon(Icons.add),
+            onPressed: () {
+              _showCreateStageForm(context);
             },
           ),
         ],
@@ -173,14 +226,35 @@ class ProjectDetailScreen extends StatelessWidget {
             const Text(
               'Descripción del proyecto:',
               style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.blue),
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+                color: Colors.blue,
+              ),
             ),
             const Padding(padding: EdgeInsets.all(4)),
             Text(
-              project.description,
+              widget.project.description,
               style: const TextStyle(fontSize: 16),
+            ),
+            const SizedBox(height: 16),
+            const Text(
+              'Etapas:',
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+                color: Colors.blue,
+              ),
+            ),
+            const Padding(padding: EdgeInsets.all(4)),
+            Expanded(
+              child: ListView.builder(
+                itemCount: widget.project.stages.length,
+                itemBuilder: (context, index) {
+                  return ListTile(
+                    title: Text(widget.project.stages[index].name),
+                  );
+                },
+              ),
             ),
           ],
         ),
@@ -192,6 +266,14 @@ class ProjectDetailScreen extends StatelessWidget {
 class Project {
   final String name;
   final String description;
+  final List<Stage> stages;
 
-  Project({required this.name, required this.description});
+  Project({required this.name, required this.description, List<Stage>? stages})
+      : stages = stages ?? [];
+}
+
+class Stage {
+  final String name;
+
+  Stage({required this.name});
 }
