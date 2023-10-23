@@ -1,6 +1,6 @@
 class Project {
-  final String name;
-  final List<Stage> stages;
+  String name;
+  List<Stage> stages;
 
   Project({
     required this.name,
@@ -16,14 +16,14 @@ class Project {
 }
 
 class Stage {
-  final String name;
-  final List<Task> tasks;
+  String name;
+  List<Task> tasks;
 
   Stage({required this.name, List<Task>? tasks}) : tasks = tasks ?? [];
 
-  Stage copyWith({List<Task>? tasks}) {
+  Stage copyWith({String? name, List<Task>? tasks}) {
     return Stage(
-      name: name,
+      name: name ?? this.name,
       tasks: tasks ?? this.tasks,
     );
   }

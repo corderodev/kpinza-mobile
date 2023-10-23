@@ -116,6 +116,54 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
     );
   }
 
+  void _renameStage(Stage stage, String newName) {
+    setState(() {
+      final stageIndex = widget.project.stages.indexOf(stage);
+      if (stageIndex != -1) {
+        widget.project.stages[stageIndex] = stage.copyWith(name: newName);
+      }
+    });
+  }
+
+  void _showEditStageName(Stage stage) {
+    TextEditingController stageNameController =
+        TextEditingController(text: stage.name);
+
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Editar Nombre de Etapa'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[
+              TextFormField(
+                controller: stageNameController,
+                decoration:
+                    const InputDecoration(labelText: 'Nuevo nombre de etapa'),
+              ),
+            ],
+          ),
+          actions: <Widget>[
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              child: const Text('Cancelar'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                _renameStage(stage, stageNameController.text);
+                Navigator.of(context).pop();
+              },
+              child: const Text('Guardar'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   void _showEditTaskDetails(Stage stage, Task task) {
     TextEditingController taskNameController =
         TextEditingController(text: task.name);
@@ -267,7 +315,19 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
                       child: Column(
                         children: <Widget>[
                           ListTile(
-                            title: Text(stage.name),
+                            title: Row(
+                              children: [
+                                Expanded(
+                                  child: Text(stage.name),
+                                ),
+                                IconButton(
+                                  icon: const Icon(Icons.edit),
+                                  onPressed: () {
+                                    _showEditStageName(stage);
+                                  },
+                                ),
+                              ],
+                            ),
                             trailing: IconButton(
                               icon: const Icon(Icons.delete),
                               onPressed: () {
