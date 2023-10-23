@@ -164,12 +164,13 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
     );
   }
 
-  void _showEditTaskDetails(Stage stage, Task task) {
+  void _showEditTaskDetails(Stage sourceStage, Task task) {
     TextEditingController taskNameController =
         TextEditingController(text: task.name);
     TextEditingController responsableController =
         TextEditingController(text: task.responsable ?? "");
     String selectedStatus = task.status;
+    String selectedStage = sourceStage.name;
 
     showDialog(
       context: context,
@@ -205,6 +206,22 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
                       );
                     }).toList(),
                   ),
+                  DropdownButton<String>(
+                    value: selectedStage,
+                    onChanged: (String? newValue) {
+                      if (newValue != null) {
+                        setState(() {
+                          selectedStage = newValue;
+                        });
+                      }
+                    },
+                    items: widget.project.stages.map((Stage stage) {
+                      return DropdownMenuItem<String>(
+                        value: stage.name,
+                        child: Text(stage.name),
+                      );
+                    }).toList(),
+                  ),
                 ],
               ),
               actions: <Widget>[
@@ -216,11 +233,15 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
                 ),
                 ElevatedButton(
                   onPressed: () {
-                    setState(() {
-                      task.name = taskNameController.text;
-                      task.responsable = responsableController.text;
-                      task.status = selectedStatus;
-                    });
+                    task.name = taskNameController.text;
+                    task.responsable = responsableController.text;
+                    task.status = selectedStatus;
+
+                    Stage targetStage = widget.project.stages
+                        .firstWhere((s) => s.name == selectedStage);
+
+                    _moveTask(sourceStage, task, targetStage);
+
                     Navigator.of(context).pop();
                   },
                   child: const Text('Guardar'),
@@ -231,6 +252,13 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
         );
       },
     );
+  }
+
+  void _moveTask(Stage sourceStage, Task task, Stage targetStage) {
+    setState(() {
+      sourceStage.tasks.remove(task);
+      targetStage.tasks.add(task);
+    });
   }
 
   @override
