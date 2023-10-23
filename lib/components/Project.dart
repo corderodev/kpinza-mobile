@@ -23,7 +23,7 @@ class Stage {
 
   Stage copyWith({List<Task>? tasks}) {
     return Stage(
-      name: this.name,
+      name: name,
       tasks: tasks ?? this.tasks,
     );
   }
@@ -31,6 +31,7 @@ class Stage {
 
 class Task {
   final String name;
+  String? responsable;
 
-  Task({required this.name});
+  Task({required this.name, this.responsable});
 }

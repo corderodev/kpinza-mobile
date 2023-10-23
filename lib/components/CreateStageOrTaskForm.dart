@@ -4,13 +4,14 @@ import 'package:kpinza_mobile/components/Project.dart';
 class CreateStageOrTaskForm extends StatefulWidget {
   final List<Stage> stages;
   final void Function(String) onCreateStage;
-  final void Function(String, String) onCreateTask;
+  final void Function(String, String, String?) onCreateTask;
 
   const CreateStageOrTaskForm(
-      {super.key,
+      {Key? key,
       required this.stages,
       required this.onCreateStage,
-      required this.onCreateTask});
+      required this.onCreateTask})
+      : super(key: key);
 
   @override
   _CreateStageOrTaskFormState createState() => _CreateStageOrTaskFormState();
@@ -18,6 +19,7 @@ class CreateStageOrTaskForm extends StatefulWidget {
 
 class _CreateStageOrTaskFormState extends State<CreateStageOrTaskForm> {
   final TextEditingController _nameController = TextEditingController();
+  final TextEditingController _responsableController = TextEditingController();
   bool _isCreatingTask = false;
   String? selectedStage;
 
@@ -50,17 +52,28 @@ class _CreateStageOrTaskFormState extends State<CreateStageOrTaskForm> {
                   _isCreatingTask ? 'Nombre de la tarea' : 'Nombre de la etapa',
             ),
           ),
+          Visibility(
+            visible: _isCreatingTask,
+            child: TextFormField(
+              controller: _responsableController,
+              decoration: const InputDecoration(
+                labelText: 'Responsable de la tarea',
+              ),
+            ),
+          ),
           ElevatedButton(
             onPressed: () {
               final name = _nameController.text;
+              final responsable = _responsableController.text;
               if (_isCreatingTask) {
                 final stageName = selectedStage ?? "sin nombre";
-                widget.onCreateTask(name, stageName);
+                widget.onCreateTask(name, stageName, responsable);
               } else {
                 widget.onCreateStage(name);
               }
 
               _nameController.clear();
+              _responsableController.clear();
               Navigator.of(context).pop();
             },
             child: Text(_isCreatingTask ? 'Crear Tarea' : 'Crear Etapa'),

@@ -41,21 +41,6 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
     });
   }
 
-  void _showCreateStageOrTaskForm(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return CreateStageOrTaskForm(
-          stages: widget.project.stages,
-          onCreateStage: _createStage,
-          onCreateTask: (taskName, stageName) {
-            _createTask(taskName, stageName);
-          },
-        );
-      },
-    );
-  }
-
   void _createStage(String stageName) {
     setState(() {
       widget.project.stages.add(Stage(name: stageName, tasks: []));
@@ -92,12 +77,12 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
     );
   }
 
-  void _createTask(String taskName, String stageName) {
+  void _createTask(String taskName, String stageName, String? responsable) {
     setState(() {
       if (selectedStage != null) {
         final stage =
             widget.project.stages.firstWhere((s) => s.name == selectedStage);
-        stage.tasks.add(Task(name: taskName));
+        stage.tasks.add(Task(name: taskName, responsable: responsable));
       }
     });
     Navigator.of(context).pop();
@@ -112,6 +97,21 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
         widget.project.stages[stageIndex] = updatedStage;
       }
     });
+  }
+
+  void _showCreateStageOrTaskForm(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return CreateStageOrTaskForm(
+          stages: widget.project.stages,
+          onCreateStage: _createStage,
+          onCreateTask: (taskName, stageName, responsable) {
+            _createTask(taskName, stageName, responsable);
+          },
+        );
+      },
+    );
   }
 
   @override
