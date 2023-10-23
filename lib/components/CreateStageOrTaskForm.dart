@@ -4,14 +4,15 @@ import 'package:kpinza_mobile/components/Project.dart';
 class CreateStageOrTaskForm extends StatefulWidget {
   final List<Stage> stages;
   final void Function(String) onCreateStage;
-  final void Function(String, String, String?, String) onCreateTask;
+  final void Function(String, String, String?, String, DateTime?, DateTime?)
+      onCreateTask;
 
-  const CreateStageOrTaskForm(
-      {Key? key,
-      required this.stages,
-      required this.onCreateStage,
-      required this.onCreateTask})
-      : super(key: key);
+  const CreateStageOrTaskForm({
+    Key? key,
+    required this.stages,
+    required this.onCreateStage,
+    required this.onCreateTask,
+  }) : super(key: key);
 
   @override
   _CreateStageOrTaskFormState createState() => _CreateStageOrTaskFormState();
@@ -23,6 +24,8 @@ class _CreateStageOrTaskFormState extends State<CreateStageOrTaskForm> {
   bool _isCreatingTask = false;
   String? selectedStage;
   String? selectedStatus;
+  DateTime? selectedStartDate;
+  DateTime? selectedDueDate;
 
   @override
   Widget build(BuildContext context) {
@@ -62,6 +65,52 @@ class _CreateStageOrTaskFormState extends State<CreateStageOrTaskForm> {
               ),
             ),
           ),
+          const Padding(padding: EdgeInsets.all(4)),
+          if (_isCreatingTask)
+            Column(
+              children: [
+                const Text('Fecha de Inicio:'),
+                TextButton(
+                  onPressed: () async {
+                    final selectedDate = await showDatePicker(
+                      context: context,
+                      initialDate: selectedStartDate ?? DateTime.now(),
+                      firstDate: DateTime(2000),
+                      lastDate: DateTime(2101),
+                    );
+
+                    if (selectedDate != null) {
+                      setState(() {
+                        selectedStartDate = selectedDate;
+                      });
+                    }
+                  },
+                  child: Text(selectedStartDate != null
+                      ? selectedStartDate!.toLocal().toString().split(' ')[0]
+                      : 'Seleccionar fecha'),
+                ),
+                const Text('Fecha de Entrega:'),
+                TextButton(
+                  onPressed: () async {
+                    final selectedDate = await showDatePicker(
+                      context: context,
+                      initialDate: selectedDueDate ?? DateTime.now(),
+                      firstDate: DateTime(2000),
+                      lastDate: DateTime(2101),
+                    );
+
+                    if (selectedDate != null) {
+                      setState(() {
+                        selectedDueDate = selectedDate;
+                      });
+                    }
+                  },
+                  child: Text(selectedDueDate != null
+                      ? selectedDueDate!.toLocal().toString().split(' ')[0]
+                      : 'Seleccionar fecha'),
+                ),
+              ],
+            ),
           ElevatedButton(
             onPressed: () {
               final name = _nameController.text;
@@ -69,7 +118,8 @@ class _CreateStageOrTaskFormState extends State<CreateStageOrTaskForm> {
               final status = selectedStatus ?? 'Pendiente';
               if (_isCreatingTask) {
                 final stageName = selectedStage ?? "sin nombre";
-                widget.onCreateTask(name, stageName, responsable, status);
+                widget.onCreateTask(name, stageName, responsable, status,
+                    selectedStartDate, selectedDueDate);
               } else {
                 widget.onCreateStage(name);
               }

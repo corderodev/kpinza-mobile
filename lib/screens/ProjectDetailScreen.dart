@@ -78,10 +78,16 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
     );
   }
 
-  void _createTask(
-      String taskName, String stageName, String? responsable, String status) {
-    final newTask =
-        Task(name: taskName, responsable: responsable, status: status);
+  void _createTask(String taskName, String stageName, String? responsable,
+      String status, DateTime? selectedStartDate, DateTime? selectedDueDate) {
+    final newTask = Task(
+      name: taskName,
+      responsable: responsable,
+      status: status,
+      startDate: selectedStartDate,
+      dueDate: selectedDueDate,
+    );
+
     final targetStage =
         widget.project.stages.firstWhere((s) => s.name == stageName);
     setState(() {
@@ -108,8 +114,10 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
         return CreateStageOrTaskForm(
           stages: widget.project.stages,
           onCreateStage: _createStage,
-          onCreateTask: (taskName, stageName, responsable, status) {
-            _createTask(taskName, stageName, responsable, status);
+          onCreateTask: (taskName, stageName, responsable, status,
+              selectedStartDate, selectedDueDate) {
+            _createTask(taskName, stageName, responsable, status,
+                selectedStartDate, selectedDueDate);
           },
         );
       },
@@ -170,7 +178,8 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
     TextEditingController responsableController =
         TextEditingController(text: task.responsable ?? "");
     String selectedStatus = task.status;
-    String selectedStage = sourceStage.name;
+    DateTime? selectedStartDate = task.startDate;
+    DateTime? selectedDueDate = task.dueDate;
 
     showDialog(
       context: context,
@@ -206,21 +215,46 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
                       );
                     }).toList(),
                   ),
-                  DropdownButton<String>(
-                    value: selectedStage,
-                    onChanged: (String? newValue) {
-                      if (newValue != null) {
+                  const Padding(padding: EdgeInsets.all(2)),
+                  const Text('Fecha de Inicio:'),
+                  TextButton(
+                    onPressed: () async {
+                      final selectedDate = await showDatePicker(
+                        context: context,
+                        initialDate: selectedStartDate ?? DateTime.now(),
+                        firstDate: DateTime(2000),
+                        lastDate: DateTime(2101),
+                      );
+
+                      if (selectedDate != null) {
                         setState(() {
-                          selectedStage = newValue;
+                          selectedStartDate = selectedDate;
                         });
                       }
                     },
-                    items: widget.project.stages.map((Stage stage) {
-                      return DropdownMenuItem<String>(
-                        value: stage.name,
-                        child: Text(stage.name),
+                    child: Text(selectedStartDate != null
+                        ? selectedStartDate!.toLocal().toString().split(' ')[0]
+                        : 'Seleccionar fecha'),
+                  ),
+                  const Text('Fecha de Entrega:'),
+                  TextButton(
+                    onPressed: () async {
+                      final selectedDate = await showDatePicker(
+                        context: context,
+                        initialDate: selectedDueDate ?? DateTime.now(),
+                        firstDate: DateTime(2000),
+                        lastDate: DateTime(2101),
                       );
-                    }).toList(),
+
+                      if (selectedDate != null) {
+                        setState(() {
+                          selectedDueDate = selectedDate;
+                        });
+                      }
+                    },
+                    child: Text(selectedDueDate != null
+                        ? selectedDueDate!.toLocal().toString().split(' ')[0]
+                        : 'Seleccionar fecha'),
                   ),
                 ],
               ),
@@ -236,9 +270,11 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
                     task.name = taskNameController.text;
                     task.responsable = responsableController.text;
                     task.status = selectedStatus;
+                    task.startDate = selectedStartDate;
+                    task.dueDate = selectedDueDate;
 
                     Stage targetStage = widget.project.stages
-                        .firstWhere((s) => s.name == selectedStage);
+                        .firstWhere((s) => s.name == sourceStage.name);
 
                     _moveTask(sourceStage, task, targetStage);
 

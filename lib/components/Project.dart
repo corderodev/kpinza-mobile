@@ -33,10 +33,14 @@ class Task {
   String name;
   String? responsable;
   String status;
+  DateTime? startDate;
+  DateTime? dueDate;
 
   Task({
     required this.name,
     this.responsable,
     this.status = 'Pendiente',
+    this.startDate,
+    this.dueDate,
   });
 }
