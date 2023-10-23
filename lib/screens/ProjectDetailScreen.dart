@@ -42,8 +42,9 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
   }
 
   void _createStage(String stageName) {
+    final newStage = Stage(name: stageName, tasks: []);
     setState(() {
-      widget.project.stages.add(Stage(name: stageName, tasks: []));
+      widget.project.stages.add(newStage);
     });
     Navigator.of(context).pop();
   }
@@ -77,13 +78,20 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
     );
   }
 
-  void _createTask(String taskName, String stageName, String? responsable) {
+  void _createTask(
+      String taskName, String stageName, String? responsable, String status) {
+    final newTask =
+        Task(name: taskName, responsable: responsable, status: status);
+    final targetStage =
+        widget.project.stages.firstWhere((s) => s.name == stageName);
     setState(() {
       if (selectedStage != null) {
         final stage =
             widget.project.stages.firstWhere((s) => s.name == selectedStage);
-        stage.tasks.add(Task(name: taskName, responsable: responsable));
+        stage.tasks.add(
+            Task(name: taskName, responsable: responsable, status: status));
       }
+      targetStage.tasks.add(newTask);
     });
     Navigator.of(context).pop();
   }
@@ -106,9 +114,37 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
         return CreateStageOrTaskForm(
           stages: widget.project.stages,
           onCreateStage: _createStage,
-          onCreateTask: (taskName, stageName, responsable) {
-            _createTask(taskName, stageName, responsable);
+          onCreateTask: (taskName, stageName, responsable, status) {
+            _createTask(taskName, stageName, responsable, status);
           },
+        );
+      },
+    );
+  }
+
+  void _showTaskDetails(Task task) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Detalles de la Tarea'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: <Widget>[
+              Text('Nombre de la Tarea: ${task.name}'),
+              Text('Responsable: ${task.responsable ?? 'N/A'}'),
+              Text('Estado: ${task.status}'),
+            ],
+          ),
+          actions: <Widget>[
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              child: const Text('Cerrar'),
+            ),
+          ],
         );
       },
     );
@@ -213,13 +249,18 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
                                 color: Colors.white,
                                 margin:
                                     const EdgeInsets.symmetric(horizontal: 8.0),
-                                child: ListTile(
-                                  title: Text(task.name),
-                                  trailing: IconButton(
-                                    icon: const Icon(Icons.delete),
-                                    onPressed: () {
-                                      _deleteTask(stage, task);
-                                    },
+                                child: GestureDetector(
+                                  onTap: () {
+                                    _showTaskDetails(task);
+                                  },
+                                  child: ListTile(
+                                    title: Text(task.name),
+                                    trailing: IconButton(
+                                      icon: const Icon(Icons.delete),
+                                      onPressed: () {
+                                        _deleteTask(stage, task);
+                                      },
+                                    ),
                                   ),
                                 ),
                               );

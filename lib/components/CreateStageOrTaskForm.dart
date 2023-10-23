@@ -4,7 +4,7 @@ import 'package:kpinza_mobile/components/Project.dart';
 class CreateStageOrTaskForm extends StatefulWidget {
   final List<Stage> stages;
   final void Function(String) onCreateStage;
-  final void Function(String, String, String?) onCreateTask;
+  final void Function(String, String, String?, String) onCreateTask;
 
   const CreateStageOrTaskForm(
       {Key? key,
@@ -22,6 +22,7 @@ class _CreateStageOrTaskFormState extends State<CreateStageOrTaskForm> {
   final TextEditingController _responsableController = TextEditingController();
   bool _isCreatingTask = false;
   String? selectedStage;
+  String? selectedStatus;
 
   @override
   Widget build(BuildContext context) {
@@ -65,13 +66,13 @@ class _CreateStageOrTaskFormState extends State<CreateStageOrTaskForm> {
             onPressed: () {
               final name = _nameController.text;
               final responsable = _responsableController.text;
+              final status = selectedStatus ?? 'Pendiente';
               if (_isCreatingTask) {
                 final stageName = selectedStage ?? "sin nombre";
-                widget.onCreateTask(name, stageName, responsable);
+                widget.onCreateTask(name, stageName, responsable, status);
               } else {
                 widget.onCreateStage(name);
               }
-
               _nameController.clear();
               _responsableController.clear();
               Navigator.of(context).pop();

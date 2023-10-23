@@ -30,8 +30,13 @@ class Stage {
 }
 
 class Task {
-  final String name;
+  String name;
   String? responsable;
+  String status;
 
-  Task({required this.name, this.responsable});
+  Task({
+    required this.name,
+    this.responsable,
+    this.status = 'Pendiente',
+  });
 }
