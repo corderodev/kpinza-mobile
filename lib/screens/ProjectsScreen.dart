@@ -1,5 +1,14 @@
 import 'package:flutter/material.dart';
 
+class MyApp extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return const MaterialApp(
+      home: ProjectsScreen(),
+    );
+  }
+}
+
 class ProjectsScreen extends StatefulWidget {
   const ProjectsScreen({super.key});
 
@@ -9,6 +18,15 @@ class ProjectsScreen extends StatefulWidget {
 
 class _ProjectsScreenState extends State<ProjectsScreen> {
   List<Project> projects = [];
+
+  void _changeProjectName(Project project, String newName) {
+    setState(() {
+      final projectIndex = projects.indexOf(project);
+      if (projectIndex != -1) {
+        projects[projectIndex] = project.copyWith(name: newName);
+      }
+    });
+  }
 
   void _createProject(String projectName, String projectDescription) {
     setState(() {
@@ -34,7 +52,10 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: ProjectList(projects: projects, onDelete: _deleteProject),
+      body: ProjectList(
+          projects: projects,
+          onDelete: _deleteProject,
+          changeProjectName: _changeProjectName),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
           _showCreateProjectForm(context);
@@ -67,12 +88,11 @@ class _CreateProjectFormState extends State<CreateProjectForm> {
         children: <Widget>[
           TextFormField(
             controller: _nameController,
-            decoration: const InputDecoration(labelText: 'Nombre del proyecto'),
+            decoration: const InputDecoration(labelText: 'Nombre'),
           ),
           TextFormField(
             controller: _descriptionController,
-            decoration:
-                const InputDecoration(labelText: 'Descripción del proyecto'),
+            decoration: const InputDecoration(labelText: 'Descripción'),
           ),
         ],
       ),
@@ -94,7 +114,7 @@ class _CreateProjectFormState extends State<CreateProjectForm> {
 
             Navigator.of(context).pop();
           },
-          child: const Text('Crear Proyecto'),
+          child: const Text('Crear proyecto'),
         ),
       ],
     );
@@ -104,9 +124,13 @@ class _CreateProjectFormState extends State<CreateProjectForm> {
 class ProjectList extends StatelessWidget {
   final List<Project> projects;
   final void Function(Project) onDelete;
+  final void Function(Project, String) changeProjectName;
 
   const ProjectList(
-      {super.key, required this.projects, required this.onDelete});
+      {super.key,
+      required this.projects,
+      required this.onDelete,
+      required this.changeProjectName});
 
   @override
   Widget build(BuildContext context) {
@@ -138,6 +162,7 @@ class ProjectList extends StatelessWidget {
                   builder: (context) => ProjectDetailScreen(
                     project: project,
                     onDelete: onDelete,
+                    changeProjectName: changeProjectName,
                   ),
                 ),
               );
@@ -152,18 +177,28 @@ class ProjectList extends StatelessWidget {
 class ProjectDetailScreen extends StatefulWidget {
   final Project project;
   final void Function(Project) onDelete;
+  final void Function(Project, String) changeProjectName;
 
-  const ProjectDetailScreen({
-    Key? key,
-    required this.project,
-    required this.onDelete,
-  }) : super(key: key);
+  const ProjectDetailScreen(
+      {Key? key,
+      required this.project,
+      required this.onDelete,
+      required this.changeProjectName})
+      : super(key: key);
 
   @override
   _ProjectDetailScreenState createState() => _ProjectDetailScreenState();
 }
 
 class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
+  final TextEditingController _nameController = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    _nameController.text = widget.project.name;
+  }
+
   void _showCreateStageForm(BuildContext context) {
     final TextEditingController stageNameController = TextEditingController();
     showDialog(
@@ -235,6 +270,12 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
     );
   }
 
+  void _saveName() {
+    final newName = _nameController.text;
+    widget.changeProjectName(widget.project, newName);
+    Navigator.pop(context);
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -246,6 +287,41 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
             onPressed: () {
               widget.onDelete(widget.project);
               Navigator.pop(context);
+            },
+          ),
+          IconButton(
+            icon: const Icon(Icons.edit),
+            onPressed: () {
+              showDialog(
+                context: context,
+                builder: (BuildContext context) {
+                  return AlertDialog(
+                    title: const Text('Editar Nombre del Proyecto'),
+                    content: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: <Widget>[
+                        TextFormField(
+                          controller: _nameController,
+                          decoration:
+                              const InputDecoration(labelText: 'Nuevo nombre'),
+                        ),
+                      ],
+                    ),
+                    actions: <Widget>[
+                      TextButton(
+                        onPressed: () {
+                          Navigator.of(context).pop();
+                        },
+                        child: const Text('Cancelar'),
+                      ),
+                      ElevatedButton(
+                        onPressed: _saveName,
+                        child: const Text('Guardar'),
+                      ),
+                    ],
+                  );
+                },
+              );
             },
           ),
           IconButton(
@@ -313,8 +389,19 @@ class Project {
   final String description;
   final List<Stage> stages;
 
-  Project({required this.name, required this.description, List<Stage>? stages})
-      : stages = stages ?? [];
+  Project({
+    required this.name,
+    required this.description,
+    List<Stage>? stages,
+  }) : stages = stages ?? [];
+
+  Project copyWith({String? name, String? description, List<Stage>? stages}) {
+    return Project(
+      name: name ?? this.name,
+      description: description ?? this.description,
+      stages: stages ?? this.stages,
+    );
+  }
 }
 
 class Stage {
