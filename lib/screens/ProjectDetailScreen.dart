@@ -85,12 +85,6 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
     final targetStage =
         widget.project.stages.firstWhere((s) => s.name == stageName);
     setState(() {
-      if (selectedStage != null) {
-        final stage =
-            widget.project.stages.firstWhere((s) => s.name == selectedStage);
-        stage.tasks.add(
-            Task(name: taskName, responsable: responsable, status: status));
-      }
       targetStage.tasks.add(newTask);
     });
     Navigator.of(context).pop();
@@ -122,29 +116,70 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
     );
   }
 
-  void _showTaskDetails(Task task) {
+  void _showEditTaskDetails(Stage stage, Task task) {
+    TextEditingController taskNameController =
+        TextEditingController(text: task.name);
+    TextEditingController responsableController =
+        TextEditingController(text: task.responsable ?? "");
+    String selectedStatus = task.status;
+
     showDialog(
       context: context,
       builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('Detalles de la Tarea'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: <Widget>[
-              Text('Nombre de la Tarea: ${task.name}'),
-              Text('Responsable: ${task.responsable ?? 'N/A'}'),
-              Text('Estado: ${task.status}'),
-            ],
-          ),
-          actions: <Widget>[
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-              child: const Text('Cerrar'),
-            ),
-          ],
+        return StatefulBuilder(
+          builder: (BuildContext context, StateSetter setState) {
+            return AlertDialog(
+              title: const Text('Detalles de la Tarea'),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: <Widget>[
+                  TextFormField(
+                    controller: taskNameController,
+                    decoration:
+                        const InputDecoration(labelText: 'Nombre de la Tarea'),
+                  ),
+                  TextFormField(
+                    controller: responsableController,
+                    decoration: const InputDecoration(labelText: 'Responsable'),
+                  ),
+                  DropdownButton<String>(
+                    value: selectedStatus,
+                    onChanged: (String? newValue) {
+                      setState(() {
+                        selectedStatus = newValue!;
+                      });
+                    },
+                    items: <String>['Pendiente', 'En Progreso', 'Completada']
+                        .map<DropdownMenuItem<String>>((String value) {
+                      return DropdownMenuItem<String>(
+                        value: value,
+                        child: Text(value),
+                      );
+                    }).toList(),
+                  ),
+                ],
+              ),
+              actions: <Widget>[
+                TextButton(
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                  },
+                  child: const Text('Cancelar'),
+                ),
+                ElevatedButton(
+                  onPressed: () {
+                    setState(() {
+                      task.name = taskNameController.text;
+                      task.responsable = responsableController.text;
+                      task.status = selectedStatus;
+                    });
+                    Navigator.of(context).pop();
+                  },
+                  child: const Text('Guardar'),
+                ),
+              ],
+            );
+          },
         );
       },
     );
@@ -251,7 +286,7 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
                                     const EdgeInsets.symmetric(horizontal: 8.0),
                                 child: GestureDetector(
                                   onTap: () {
-                                    _showTaskDetails(task);
+                                    _showEditTaskDetails(stage, task);
                                   },
                                   child: ListTile(
                                     title: Text(task.name),
