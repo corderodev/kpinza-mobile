@@ -178,6 +178,7 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
     TextEditingController responsableController =
         TextEditingController(text: task.responsable ?? "");
     String selectedStatus = task.status;
+    String selectedStage = sourceStage.name;
     DateTime? selectedStartDate = task.startDate;
     DateTime? selectedDueDate = task.dueDate;
 
@@ -256,6 +257,22 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
                         ? selectedDueDate!.toLocal().toString().split(' ')[0]
                         : 'Seleccionar fecha'),
                   ),
+                  DropdownButton<String>(
+                    value: selectedStage,
+                    onChanged: (String? newValue) {
+                      if (newValue != null) {
+                        setState(() {
+                          selectedStage = newValue;
+                        });
+                      }
+                    },
+                    items: widget.project.stages.map((Stage stage) {
+                      return DropdownMenuItem<String>(
+                        value: stage.name,
+                        child: Text(stage.name),
+                      );
+                    }).toList(),
+                  ),
                 ],
               ),
               actions: <Widget>[
@@ -274,7 +291,7 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
                     task.dueDate = selectedDueDate;
 
                     Stage targetStage = widget.project.stages
-                        .firstWhere((s) => s.name == sourceStage.name);
+                        .firstWhere((s) => s.name == selectedStage);
 
                     _moveTask(sourceStage, task, targetStage);
 
