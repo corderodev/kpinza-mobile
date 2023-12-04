@@ -65,7 +65,7 @@ class _CreateStageOrTaskFormState extends State<CreateStageOrTaskForm> {
                     child: Text(stage.name),
                   );
                 }).toList(),
-                decoration: InputDecoration(
+                decoration: const InputDecoration(
                   labelText: 'Seleccionar Etapa',
                 ),
               ),
@@ -74,12 +74,12 @@ class _CreateStageOrTaskFormState extends State<CreateStageOrTaskForm> {
                 children: [
                   TextFormField(
                     controller: _responsableController,
-                    decoration: InputDecoration(
+                    decoration: const InputDecoration(
                       labelText: 'Responsable',
                     ),
                   ),
                   const SizedBox(height: 16),
-                  Text('Fecha de Inicio:'),
+                  const Text('Fecha de Inicio:'),
                   TextButton(
                     onPressed: () async {
                       final selectedDate = await showDatePicker(
@@ -100,7 +100,7 @@ class _CreateStageOrTaskFormState extends State<CreateStageOrTaskForm> {
                         : 'Seleccionar fecha'),
                   ),
                   const SizedBox(height: 16),
-                  Text('Fecha de Entrega:'),
+                  const Text('Fecha de Entrega:'),
                   TextButton(
                     onPressed: () async {
                       final selectedDate = await showDatePicker(
@@ -132,12 +132,12 @@ class _CreateStageOrTaskFormState extends State<CreateStageOrTaskForm> {
               ),
             ElevatedButton(
               onPressed: () {
-                if (selectedStage != null) {
-                  if (_isCreatingTask) {
-                    final name = _nameController.text;
-                    final responsable = _responsableController.text;
-                    final estimatedTime = _estimatedTimeController.text;
+                if (_isCreatingTask) {
+                  final name = _nameController.text;
+                  final responsable = _responsableController.text;
+                  final estimatedTime = _estimatedTimeController.text;
 
+                  if (selectedStage != null) {
                     widget.onCreateTask(
                       name,
                       selectedStage!,
@@ -146,20 +146,23 @@ class _CreateStageOrTaskFormState extends State<CreateStageOrTaskForm> {
                       selectedDueDate,
                       estimatedTime,
                     );
+
+                    _nameController.clear();
+                    _responsableController.clear();
+                    _estimatedTimeController.clear();
+                    selectedStage = null;
+                    selectedStartDate = null;
+                    selectedDueDate = null;
+                    selectedStatus = 'Pendiente';
+                    Navigator.of(context).pop();
                   } else {
-                    final name = _nameController.text;
-                    widget.onCreateStage(name);
+                    print('Por favor, selecciona una etapa');
                   }
-                  _nameController.clear();
-                  _responsableController.clear();
-                  _estimatedTimeController.clear();
-                  selectedStage = null;
-                  selectedStartDate = null;
-                  selectedDueDate = null;
-                  selectedStatus = 'Pendiente';
-                  Navigator.of(context).pop();
                 } else {
-                  print('Por favor, selecciona una etapa');
+                  final name = _nameController.text;
+                  widget.onCreateStage(name);
+                  _nameController.clear();
+                  Navigator.of(context).pop();
                 }
               },
               child: Text(_isCreatingTask ? 'Crear Tarea' : 'Crear Etapa'),
@@ -179,23 +182,4 @@ class _CreateStageOrTaskFormState extends State<CreateStageOrTaskForm> {
       ],
     );
   }
-}
-
-void main() {
-  runApp(MaterialApp(
-    home: Scaffold(
-      appBar: AppBar(
-        title: Text('Create Stage or Task Form'),
-      ),
-      body: Center(
-        child: ElevatedButton(
-          onPressed: () {
-            // Mostrar el diálogo
-            // showDialog(context: context, builder: ...);
-          },
-          child: Text('Mostrar Formulario'),
-        ),
-      ),
-    ),
-  ));
 }
