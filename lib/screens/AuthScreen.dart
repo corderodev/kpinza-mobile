@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:kpinza_mobile/screens/MainScreen.dart';
 
 class AuthScreen extends StatefulWidget {
@@ -14,6 +15,34 @@ class _AuthScreenState extends State<AuthScreen> {
   final TextEditingController _aliasController = TextEditingController();
 
   bool _isSignIn = true;
+
+  Future<void> _authenticate() async {
+    final email = _emailController.text;
+    final password = _passwordController.text;
+
+    try {
+      if (_isSignIn) {
+        await FirebaseAuth.instance.signInWithEmailAndPassword(
+          email: email,
+          password: password,
+        );
+      } else {
+        await FirebaseAuth.instance.createUserWithEmailAndPassword(
+          email: email,
+          password: password,
+        );
+      }
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(
+          builder: (context) => const MainScreen(),
+        ),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text('Error: $e'),
+      ));
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -48,29 +77,7 @@ class _AuthScreenState extends State<AuthScreen> {
               ),
             const SizedBox(height: 20),
             ElevatedButton(
-              onPressed: () {
-                if (_isSignIn) {
-                  final email = _emailController.text;
-                  final password = _passwordController.text;
-
-                  if (email == 'admin' && password == 'admin') {
-                    Navigator.of(context).pushReplacement(
-                      MaterialPageRoute(
-                        builder: (context) => const MainScreen(),
-                      ),
-                    );
-                  } else {
-                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-                      content: Text(
-                        'Credenciales incorrectas. Por favor, intenta de nuevo.',
-                      ),
-                    ));
-                  }
-                } else {
-                  final email = _emailController.text;
-                  final password = _passwordController.text;
-                }
-              },
+              onPressed: _authenticate,
               child: Text(_isSignIn ? 'Iniciar Sesión' : 'Registrar Cuenta'),
             ),
             TextButton(

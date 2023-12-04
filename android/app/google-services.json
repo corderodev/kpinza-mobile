@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "944902696397",
+    "project_id": "kpinza-4819d",
+    "storage_bucket": "kpinza-4819d.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:944902696397:android:4e70c7b5fe4c1232db2884",
+        "android_client_info": {
+          "package_name": "com.example.kpinza_mobile"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCVI8JjF-qqXOyhzp9Snki3WS9iv4lSiGw"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

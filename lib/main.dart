@@ -2,8 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:kpinza_mobile/screens/AuthGuard.dart';
 import 'package:kpinza_mobile/screens/AuthScreen.dart';
 import 'package:kpinza_mobile/screens/MainScreen.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'firebase_options.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   runApp(const MyApp());
 }
 
