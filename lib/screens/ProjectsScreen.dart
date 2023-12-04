@@ -2,41 +2,56 @@ import 'package:flutter/material.dart';
 import 'package:kpinza_mobile/components/CreateProjectForm.dart';
 import 'package:kpinza_mobile/components/ProjectList.dart';
 import 'package:kpinza_mobile/components/Project.dart';
-
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return const MaterialApp(
-      home: ProjectsScreen(),
-    );
-  }
-}
+import 'package:kpinza_mobile/screens/ProjectDetailScreen.dart';
+import 'package:kpinza_mobile/utils/firebase_utils.dart';
 
 class ProjectsScreen extends StatefulWidget {
-  const ProjectsScreen({super.key});
+  const ProjectsScreen({Key? key}) : super(key: key);
 
   @override
   _ProjectsScreenState createState() => _ProjectsScreenState();
 }
 
 class _ProjectsScreenState extends State<ProjectsScreen> {
-  List<Project> projects = [];
+  late List<Project> projects = [];
 
-  void _changeProjectName(Project project, String newName) {
+  @override
+  void initState() {
+    super.initState();
+    obtenerProyectos();
+  }
+
+  Future<void> obtenerProyectos() async {
+    List<Project> fetchedProjects =
+        await FirebaseUtils.obtenerProyectosDesdeFirebase();
     setState(() {
-      final projectIndex = projects.indexOf(project);
-      if (projectIndex != -1) {
-        projects[projectIndex] = project.copyWith(name: newName);
-      }
+      projects = fetchedProjects;
     });
   }
 
-  void _createProject(String projectName, String supervisor) {
-    setState(() {
-      projects.add(Project(name: projectName, supervisor: supervisor));
-    });
+  void _changeProjectName(Project project, String newName) async {
+    try {
+      await FirebaseUtils.updateProjectName(project.name, newName);
+      setState(() {
+        final projectIndex = projects.indexWhere((p) => p.name == project.name);
+        if (projectIndex != -1) {
+          projects[projectIndex] = project.copyWith(name: newName);
+        }
+      });
+    } catch (e) {
+      print('Error al cambiar el nombre del proyecto: $e');
+    }
+  }
+
+  Future<void> _createProject(String projectName, String supervisor) async {
+    try {
+      await FirebaseUtils.saveProject(
+        Project(id: projectName, name: projectName, supervisor: supervisor),
+      );
+      obtenerProyectos();
+    } catch (e) {
+      print('Error al crear y guardar el proyecto: $e');
+    }
   }
 
   Future<void> _showCreateProjectForm(BuildContext context) async {
@@ -52,17 +67,21 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
     );
   }
 
-  void _deleteProject(Project project) {
-    setState(() {
-      projects.remove(project);
-    });
+  void _deleteProject(Project project) async {
+    try {
+      await FirebaseUtils.deleteProject(project.name);
+      setState(() {
+        projects.remove(project);
+      });
+    } catch (e) {
+      print('Error al eliminar el proyecto: $e');
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: ProjectList(
-        projects: projects,
         onDelete: _deleteProject,
         changeProjectName: _changeProjectName,
       ),

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:kpinza_mobile/components/CreateStageOrTaskForm.dart';
 import 'package:kpinza_mobile/components/Project.dart';
+import 'package:firebase_database/firebase_database.dart';
 
 class ProjectDetailScreen extends StatefulWidget {
   Project project;
@@ -477,9 +478,42 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
         } else {
           pendingTasks++;
         }
+
+        DatabaseReference statusReference = FirebaseDatabase.instance
+            .ref()
+            .child('projects/${widget.project.id}/status');
+
+        statusReference.set({
+          'totalTasks': totalTasks,
+          'completedTasks': completedTasks,
+          'inProgressTasks': inProgressTasks,
+          'pendingTasks': pendingTasks,
+        });
+
+        // Guardar detalles de la tarea en la base de datos
+        DatabaseReference taskReference = FirebaseDatabase.instance
+            .ref()
+            .child('projects/${widget.project.id}/tasks')
+            .push();
+
+        taskReference.set({
+          'name': task.name,
+          'status': task.status,
+          'startDate': task.startDate
+              .toString(), // Guardar la fecha de inicio como string
+          'dueDate': task.dueDate
+              .toString(), // Guardar la fecha de entrega como string
+          'estimatedTime': task.estimatedTime,
+          'realTime': task.realTime,
+          'realStartDate': task.realStartDate
+              .toString(), // Guardar la fecha de inicio real como string
+          'realDueDate': task.realDueDate
+              .toString(), // Guardar la fecha de entrega real como string
+        });
       }
     }
 
+    // Mostrar el brief en un AlertDialog
     showDialog(
       context: context,
       builder: (BuildContext context) {
