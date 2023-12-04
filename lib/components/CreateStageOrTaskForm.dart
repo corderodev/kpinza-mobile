@@ -4,8 +4,14 @@ import 'package:kpinza_mobile/components/Project.dart';
 class CreateStageOrTaskForm extends StatefulWidget {
   final List<Stage> stages;
   final void Function(String) onCreateStage;
-  final void Function(String, String, String?, String, DateTime?, DateTime?)
-      onCreateTask;
+  final void Function(
+    String,
+    String,
+    String?,
+    DateTime?,
+    DateTime?,
+    String,
+  ) onCreateTask;
 
   const CreateStageOrTaskForm({
     Key? key,
@@ -21,115 +27,145 @@ class CreateStageOrTaskForm extends StatefulWidget {
 class _CreateStageOrTaskFormState extends State<CreateStageOrTaskForm> {
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _responsableController = TextEditingController();
+  final TextEditingController _estimatedTimeController =
+      TextEditingController();
   bool _isCreatingTask = false;
   String? selectedStage;
-  String? selectedStatus;
   DateTime? selectedStartDate;
   DateTime? selectedDueDate;
+  String selectedStatus = 'Pendiente';
 
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
       title: Text(_isCreatingTask ? 'Crear Tarea' : 'Crear Etapa'),
-      content: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: <Widget>[
-          if (_isCreatingTask)
-            DropdownButton<String>(
-              value: selectedStage,
-              items: widget.stages.map((stage) {
-                return DropdownMenuItem<String>(
-                  value: stage.name,
-                  child: Text(stage.name),
-                );
-              }).toList(),
-              onChanged: (value) {
-                setState(() {
-                  selectedStage = value;
-                });
-              },
-            ),
-          TextFormField(
-            controller: _nameController,
-            decoration: InputDecoration(
-              labelText:
-                  _isCreatingTask ? 'Nombre de la tarea' : 'Nombre de la etapa',
-            ),
-          ),
-          Visibility(
-            visible: _isCreatingTask,
-            child: TextFormField(
-              controller: _responsableController,
-              decoration: const InputDecoration(
-                labelText: 'Responsable de la tarea',
+      content: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: <Widget>[
+            TextFormField(
+              controller: _nameController,
+              decoration: InputDecoration(
+                labelText: _isCreatingTask
+                    ? 'Nombre de la tarea'
+                    : 'Nombre de la etapa',
               ),
             ),
-          ),
-          const Padding(padding: EdgeInsets.all(4)),
-          if (_isCreatingTask)
-            Column(
-              children: [
-                const Text('Fecha de Inicio:'),
-                TextButton(
-                  onPressed: () async {
-                    final selectedDate = await showDatePicker(
-                      context: context,
-                      initialDate: selectedStartDate ?? DateTime.now(),
-                      firstDate: DateTime(2000),
-                      lastDate: DateTime(2101),
-                    );
-
-                    if (selectedDate != null) {
-                      setState(() {
-                        selectedStartDate = selectedDate;
-                      });
-                    }
-                  },
-                  child: Text(selectedStartDate != null
-                      ? selectedStartDate!.toLocal().toString().split(' ')[0]
-                      : 'Seleccionar fecha'),
+            if (_isCreatingTask)
+              DropdownButtonFormField<String>(
+                value: selectedStage,
+                onChanged: (String? newValue) {
+                  setState(() {
+                    selectedStage = newValue;
+                  });
+                },
+                items: widget.stages.map((Stage stage) {
+                  return DropdownMenuItem<String>(
+                    value: stage.name,
+                    child: Text(stage.name),
+                  );
+                }).toList(),
+                decoration: InputDecoration(
+                  labelText: 'Seleccionar Etapa',
                 ),
-                const Text('Fecha de Entrega:'),
-                TextButton(
-                  onPressed: () async {
-                    final selectedDate = await showDatePicker(
-                      context: context,
-                      initialDate: selectedDueDate ?? DateTime.now(),
-                      firstDate: DateTime(2000),
-                      lastDate: DateTime(2101),
-                    );
+              ),
+            if (_isCreatingTask)
+              Column(
+                children: [
+                  TextFormField(
+                    controller: _responsableController,
+                    decoration: InputDecoration(
+                      labelText: 'Responsable',
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Text('Fecha de Inicio:'),
+                  TextButton(
+                    onPressed: () async {
+                      final selectedDate = await showDatePicker(
+                        context: context,
+                        initialDate: selectedStartDate ?? DateTime.now(),
+                        firstDate: DateTime(2000),
+                        lastDate: DateTime(2101),
+                      );
 
-                    if (selectedDate != null) {
-                      setState(() {
-                        selectedDueDate = selectedDate;
-                      });
-                    }
-                  },
-                  child: Text(selectedDueDate != null
-                      ? selectedDueDate!.toLocal().toString().split(' ')[0]
-                      : 'Seleccionar fecha'),
-                ),
-              ],
+                      if (selectedDate != null) {
+                        setState(() {
+                          selectedStartDate = selectedDate;
+                        });
+                      }
+                    },
+                    child: Text(selectedStartDate != null
+                        ? selectedStartDate!.toLocal().toString().split(' ')[0]
+                        : 'Seleccionar fecha'),
+                  ),
+                  const SizedBox(height: 16),
+                  Text('Fecha de Entrega:'),
+                  TextButton(
+                    onPressed: () async {
+                      final selectedDate = await showDatePicker(
+                        context: context,
+                        initialDate: selectedDueDate ?? DateTime.now(),
+                        firstDate: DateTime(2000),
+                        lastDate: DateTime(2101),
+                      );
+
+                      if (selectedDate != null) {
+                        setState(() {
+                          selectedDueDate = selectedDate;
+                        });
+                      }
+                    },
+                    child: Text(selectedDueDate != null
+                        ? selectedDueDate!.toLocal().toString().split(' ')[0]
+                        : 'Seleccionar fecha'),
+                  ),
+                  const SizedBox(height: 16),
+                  TextFormField(
+                    controller: _estimatedTimeController,
+                    keyboardType: TextInputType.number,
+                    decoration: const InputDecoration(
+                      labelText: 'Tiempo Estimado (horas)',
+                    ),
+                  ),
+                ],
+              ),
+            ElevatedButton(
+              onPressed: () {
+                if (selectedStage != null) {
+                  if (_isCreatingTask) {
+                    final name = _nameController.text;
+                    final responsable = _responsableController.text;
+                    final estimatedTime = _estimatedTimeController.text;
+
+                    widget.onCreateTask(
+                      name,
+                      selectedStage!,
+                      responsable.isNotEmpty ? responsable : null,
+                      selectedStartDate,
+                      selectedDueDate,
+                      estimatedTime,
+                    );
+                  } else {
+                    final name = _nameController.text;
+                    widget.onCreateStage(name);
+                  }
+                  _nameController.clear();
+                  _responsableController.clear();
+                  _estimatedTimeController.clear();
+                  selectedStage = null;
+                  selectedStartDate = null;
+                  selectedDueDate = null;
+                  selectedStatus = 'Pendiente';
+                  Navigator.of(context).pop();
+                } else {
+                  print('Por favor, selecciona una etapa');
+                }
+              },
+              child: Text(_isCreatingTask ? 'Crear Tarea' : 'Crear Etapa'),
             ),
-          ElevatedButton(
-            onPressed: () {
-              final name = _nameController.text;
-              final responsable = _responsableController.text;
-              final status = selectedStatus ?? 'Pendiente';
-              if (_isCreatingTask) {
-                final stageName = selectedStage ?? "sin nombre";
-                widget.onCreateTask(name, stageName, responsable, status,
-                    selectedStartDate, selectedDueDate);
-              } else {
-                widget.onCreateStage(name);
-              }
-              _nameController.clear();
-              _responsableController.clear();
-              Navigator.of(context).pop();
-            },
-            child: Text(_isCreatingTask ? 'Crear Tarea' : 'Crear Etapa'),
-          ),
-        ],
+          ],
+        ),
       ),
       actions: <Widget>[
         TextButton(
@@ -143,4 +179,23 @@ class _CreateStageOrTaskFormState extends State<CreateStageOrTaskForm> {
       ],
     );
   }
+}
+
+void main() {
+  runApp(MaterialApp(
+    home: Scaffold(
+      appBar: AppBar(
+        title: Text('Create Stage or Task Form'),
+      ),
+      body: Center(
+        child: ElevatedButton(
+          onPressed: () {
+            // Mostrar el diálogo
+            // showDialog(context: context, builder: ...);
+          },
+          child: Text('Mostrar Formulario'),
+        ),
+      ),
+    ),
+  ));
 }

@@ -20,13 +20,14 @@ class ProjectDetailScreen extends StatefulWidget {
 
 class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
   final TextEditingController _nameController = TextEditingController();
-
+  String _editedSupervisor = '';
   String? selectedStage;
 
   @override
   void initState() {
     super.initState();
     _nameController.text = widget.project.name;
+    _editedSupervisor = widget.project.supervisor;
     if (widget.project.stages.isNotEmpty) {
       selectedStage = widget.project.stages.first.name;
     }
@@ -36,9 +37,52 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
     final newName = _nameController.text;
     widget.changeProjectName(widget.project, newName);
     setState(() {
-      widget.project = widget.project.copyWith(name: newName);
+      widget.project =
+          widget.project.copyWith(name: newName, supervisor: _editedSupervisor);
       Navigator.pop(context);
     });
+  }
+
+  void _editSupervisor() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Editar Supervisor'),
+          content: TextFormField(
+            initialValue: _editedSupervisor,
+            onChanged: (value) {
+              setState(() {
+                _editedSupervisor = value;
+              });
+            },
+            decoration: const InputDecoration(
+              border: OutlineInputBorder(),
+              hintText: 'Nombre del Supervisor',
+            ),
+          ),
+          actions: <Widget>[
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              child: const Text('Cancelar'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                setState(() {
+                  // Actualizar el supervisor al confirmar los cambios
+                  widget.project =
+                      widget.project.copyWith(supervisor: _editedSupervisor);
+                });
+                Navigator.of(context).pop();
+              },
+              child: const Text('Guardar'),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   void _createStage(String stageName) {
@@ -78,14 +122,28 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
     );
   }
 
-  void _createTask(String taskName, String stageName, String? responsable,
-      String status, DateTime? selectedStartDate, DateTime? selectedDueDate) {
+  void _createTask(
+    String taskName,
+    String stageName,
+    String? responsable,
+    String status,
+    DateTime? selectedStartDate,
+    DateTime? selectedDueDate,
+    String estimatedTime,
+    String realTime,
+    DateTime? selectedRealStartDate,
+    DateTime? selectedRealDueDate,
+  ) {
     final newTask = Task(
       name: taskName,
       responsable: responsable,
       status: status,
       startDate: selectedStartDate,
       dueDate: selectedDueDate,
+      estimatedTime: estimatedTime,
+      realTime: realTime,
+      realStartDate: selectedRealStartDate,
+      realDueDate: selectedRealDueDate,
     );
 
     final targetStage =
@@ -114,10 +172,26 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
         return CreateStageOrTaskForm(
           stages: widget.project.stages,
           onCreateStage: _createStage,
-          onCreateTask: (taskName, stageName, responsable, status,
-              selectedStartDate, selectedDueDate) {
-            _createTask(taskName, stageName, responsable, status,
-                selectedStartDate, selectedDueDate);
+          onCreateTask: (
+            taskName,
+            stageName,
+            responsable,
+            selectedStartDate,
+            selectedDueDate,
+            estimatedTime,
+          ) {
+            _createTask(
+              taskName,
+              stageName,
+              responsable,
+              'Pendiente', // Status por defecto
+              selectedStartDate,
+              selectedDueDate,
+              estimatedTime,
+              '', // realTime por defecto
+              null, // selectedRealStartDate por defecto
+              null, // selectedRealDueDate por defecto
+            );
           },
         );
       },
@@ -181,6 +255,10 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
     String selectedStage = sourceStage.name;
     DateTime? selectedStartDate = task.startDate;
     DateTime? selectedDueDate = task.dueDate;
+    String estimatedTime = task.estimatedTime;
+    String realTime = task.realTime;
+    DateTime? realStartDate = task.realStartDate;
+    DateTime? realDueDate = task.realDueDate;
 
     showDialog(
       context: context,
@@ -189,91 +267,156 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
           builder: (BuildContext context, StateSetter setState) {
             return AlertDialog(
               title: const Text('Detalles de la Tarea'),
-              content: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: <Widget>[
-                  TextFormField(
-                    controller: taskNameController,
-                    decoration:
-                        const InputDecoration(labelText: 'Nombre de la Tarea'),
-                  ),
-                  TextFormField(
-                    controller: responsableController,
-                    decoration: const InputDecoration(labelText: 'Responsable'),
-                  ),
-                  DropdownButton<String>(
-                    value: selectedStatus,
-                    onChanged: (String? newValue) {
-                      setState(() {
-                        selectedStatus = newValue!;
-                      });
-                    },
-                    items: <String>['Pendiente', 'En Progreso', 'Completada']
-                        .map<DropdownMenuItem<String>>((String value) {
-                      return DropdownMenuItem<String>(
-                        value: value,
-                        child: Text(value),
-                      );
-                    }).toList(),
-                  ),
-                  const Padding(padding: EdgeInsets.all(2)),
-                  const Text('Fecha de Inicio:'),
-                  TextButton(
-                    onPressed: () async {
-                      final selectedDate = await showDatePicker(
-                        context: context,
-                        initialDate: selectedStartDate ?? DateTime.now(),
-                        firstDate: DateTime(2000),
-                        lastDate: DateTime(2101),
-                      );
+              content: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: <Widget>[
+                    TextFormField(
+                      controller: taskNameController,
+                      decoration: const InputDecoration(
+                          labelText: 'Nombre de la Tarea'),
+                    ),
+                    TextFormField(
+                      controller: responsableController,
+                      decoration:
+                          const InputDecoration(labelText: 'Responsable'),
+                    ),
+                    DropdownButton<String>(
+                      value: selectedStatus,
+                      onChanged: (String? newValue) {
+                        setState(() {
+                          selectedStatus = newValue!;
+                        });
+                      },
+                      items: <String>['Pendiente', 'En Progreso', 'Completada']
+                          .map<DropdownMenuItem<String>>((String value) {
+                        return DropdownMenuItem<String>(
+                          value: value,
+                          child: Text(value),
+                        );
+                      }).toList(),
+                    ),
+                    const Padding(padding: EdgeInsets.all(2)),
+                    const Text('Fecha de Inicio:'),
+                    TextButton(
+                      onPressed: () async {
+                        final selectedDate = await showDatePicker(
+                          context: context,
+                          initialDate: selectedStartDate ?? DateTime.now(),
+                          firstDate: DateTime(2000),
+                          lastDate: DateTime(2101),
+                        );
 
-                      if (selectedDate != null) {
-                        setState(() {
-                          selectedStartDate = selectedDate;
-                        });
-                      }
-                    },
-                    child: Text(selectedStartDate != null
-                        ? selectedStartDate!.toLocal().toString().split(' ')[0]
-                        : 'Seleccionar fecha'),
-                  ),
-                  const Text('Fecha de Entrega:'),
-                  TextButton(
-                    onPressed: () async {
-                      final selectedDate = await showDatePicker(
-                        context: context,
-                        initialDate: selectedDueDate ?? DateTime.now(),
-                        firstDate: DateTime(2000),
-                        lastDate: DateTime(2101),
-                      );
+                        if (selectedDate != null) {
+                          setState(() {
+                            selectedStartDate = selectedDate;
+                          });
+                        }
+                      },
+                      child: Text(selectedStartDate != null
+                          ? selectedStartDate!
+                              .toLocal()
+                              .toString()
+                              .split(' ')[0]
+                          : 'Seleccionar fecha'),
+                    ),
+                    const Text('Fecha de Entrega:'),
+                    TextButton(
+                      onPressed: () async {
+                        final selectedDate = await showDatePicker(
+                          context: context,
+                          initialDate: selectedDueDate ?? DateTime.now(),
+                          firstDate: DateTime(2000),
+                          lastDate: DateTime(2101),
+                        );
 
-                      if (selectedDate != null) {
-                        setState(() {
-                          selectedDueDate = selectedDate;
-                        });
-                      }
-                    },
-                    child: Text(selectedDueDate != null
-                        ? selectedDueDate!.toLocal().toString().split(' ')[0]
-                        : 'Seleccionar fecha'),
-                  ),
-                  DropdownButton<String>(
-                    value: selectedStage,
-                    onChanged: (String? newValue) {
-                      if (newValue != null) {
-                        setState(() {
-                          selectedStage = newValue;
-                        });
-                      }
-                    },
-                    items: widget.project.stages.map((Stage stage) {
-                      return DropdownMenuItem<String>(
-                        value: stage.name,
-                        child: Text(stage.name),
-                      );
-                    }).toList(),
-                  ),
-                ],
+                        if (selectedDate != null) {
+                          setState(() {
+                            selectedDueDate = selectedDate;
+                          });
+                        }
+                      },
+                      child: Text(selectedDueDate != null
+                          ? selectedDueDate!.toLocal().toString().split(' ')[0]
+                          : 'Seleccionar fecha'),
+                    ),
+                    const Padding(padding: EdgeInsets.all(2)),
+                    const Text('Tiempo Estimado (horas):'),
+                    TextFormField(
+                      initialValue: estimatedTime,
+                      onChanged: (value) {
+                        estimatedTime = value;
+                      },
+                      keyboardType: TextInputType.number,
+                    ),
+                    const Padding(padding: EdgeInsets.all(2)),
+                    const Text('Tiempo Real (horas):'),
+                    TextFormField(
+                      initialValue: realTime,
+                      onChanged: (value) {
+                        realTime = value;
+                      },
+                      keyboardType: TextInputType.number,
+                    ),
+                    const Padding(padding: EdgeInsets.all(4)),
+                    const Text('Fecha de Inicio Real:'),
+                    TextButton(
+                      onPressed: () async {
+                        final selectedDate = await showDatePicker(
+                          context: context,
+                          initialDate: realStartDate ?? DateTime.now(),
+                          firstDate: DateTime(2000),
+                          lastDate: DateTime(2101),
+                        );
+
+                        if (selectedDate != null) {
+                          setState(() {
+                            realStartDate = selectedDate;
+                          });
+                        }
+                      },
+                      child: Text(realStartDate != null
+                          ? realStartDate!.toLocal().toString().split(' ')[0]
+                          : 'Seleccionar fecha'),
+                    ),
+                    const Text('Fecha de Entrega Real:'),
+                    TextButton(
+                      onPressed: () async {
+                        final selectedDate = await showDatePicker(
+                          context: context,
+                          initialDate: realDueDate ?? DateTime.now(),
+                          firstDate: DateTime(2000),
+                          lastDate: DateTime(2101),
+                        );
+
+                        if (selectedDate != null) {
+                          setState(() {
+                            realDueDate = selectedDate;
+                          });
+                        }
+                      },
+                      child: Text(realDueDate != null
+                          ? realDueDate!.toLocal().toString().split(' ')[0]
+                          : 'Seleccionar fecha'),
+                    ),
+                    DropdownButton<String>(
+                      value: selectedStage,
+                      onChanged: (String? newValue) {
+                        if (newValue != null) {
+                          setState(() {
+                            selectedStage = newValue;
+                          });
+                        }
+                      },
+                      items: widget.project.stages.map((Stage stage) {
+                        return DropdownMenuItem<String>(
+                          value: stage.name,
+                          child: Text(stage.name),
+                        );
+                      }).toList(),
+                    ),
+                  ],
+                ),
               ),
               actions: <Widget>[
                 TextButton(
@@ -289,6 +432,10 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
                     task.status = selectedStatus;
                     task.startDate = selectedStartDate;
                     task.dueDate = selectedDueDate;
+                    task.estimatedTime = estimatedTime;
+                    task.realTime = realTime;
+                    task.realStartDate = realStartDate;
+                    task.realDueDate = realDueDate;
 
                     Stage targetStage = widget.project.stages
                         .firstWhere((s) => s.name == selectedStage);
@@ -314,12 +461,72 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
     });
   }
 
+  void _generateBriefHistory() {
+    int totalTasks = 0;
+    int completedTasks = 0;
+    int inProgressTasks = 0;
+    int pendingTasks = 0;
+
+    for (var stage in widget.project.stages) {
+      totalTasks += stage.tasks.length;
+      for (var task in stage.tasks) {
+        if (task.status == 'Completada') {
+          completedTasks++;
+        } else if (task.status == 'En Progreso') {
+          inProgressTasks++;
+        } else {
+          pendingTasks++;
+        }
+      }
+    }
+
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Estado del proyecto'),
+          content: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[
+              Text('Tareas Totales: $totalTasks'),
+              const Padding(
+                padding: EdgeInsets.all(6.0),
+              ),
+              Text('Tareas Completadas: $completedTasks'),
+              const Padding(
+                padding: EdgeInsets.all(6.0),
+              ),
+              Text('Tareas en Progreso: $inProgressTasks'),
+              const Padding(
+                padding: EdgeInsets.all(6.0),
+              ),
+              Text('Tareas Pendientes: $pendingTasks'),
+            ],
+          ),
+          actions: <Widget>[
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              child: const Text('Cerrar'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: Text(widget.project.name),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.history),
+            onPressed: _generateBriefHistory,
+          ),
           IconButton(
             icon: const Icon(Icons.delete),
             onPressed: () {
@@ -375,6 +582,31 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: <Widget>[
+            const SizedBox(height: 20),
+            Row(
+              children: [
+                const Text(
+                  'Supervisor: ',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                Expanded(
+                  child: Text(
+                    _editedSupervisor,
+                    style: const TextStyle(fontSize: 16),
+                  ),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.edit),
+                  onPressed: _editSupervisor,
+                ),
+              ],
+            ),
+            const Padding(
+              padding: EdgeInsets.all(16.0),
+            ),
             const Text(
               'Etapas:',
               style: TextStyle(

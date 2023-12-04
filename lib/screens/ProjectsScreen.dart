@@ -33,17 +33,21 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
     });
   }
 
-  void _createProject(String projectName) {
+  void _createProject(String projectName, String supervisor) {
     setState(() {
-      projects.add(Project(name: projectName));
+      projects.add(Project(name: projectName, supervisor: supervisor));
     });
   }
 
   Future<void> _showCreateProjectForm(BuildContext context) async {
+    String supervisor = "Nombre del Supervisor";
+
     await showDialog(
       context: context,
       builder: (BuildContext context) {
-        return CreateProjectForm(onSubmit: _createProject);
+        return CreateProjectForm(onSubmit: (projectName) {
+          _createProject(projectName, supervisor);
+        });
       },
     );
   }
