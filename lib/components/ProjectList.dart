@@ -1,17 +1,38 @@
 import 'package:flutter/material.dart';
 import 'package:kpinza_mobile/screens/ProjectDetailScreen.dart';
 import 'package:kpinza_mobile/components/Project.dart';
+import 'package:kpinza_mobile/utils/firebase_utils.dart';
 
-class ProjectList extends StatelessWidget {
-  final List<Project> projects;
+class ProjectList extends StatefulWidget {
   final void Function(Project) onDelete;
   final void Function(Project, String) changeProjectName;
 
-  const ProjectList(
-      {super.key,
-      required this.projects,
-      required this.onDelete,
-      required this.changeProjectName});
+  const ProjectList({
+    Key? key,
+    required this.onDelete,
+    required this.changeProjectName,
+  }) : super(key: key);
+
+  @override
+  _ProjectListState createState() => _ProjectListState();
+}
+
+class _ProjectListState extends State<ProjectList> {
+  late List<Project> projects = []; // Inicializa la lista de proyectos
+
+  @override
+  void initState() {
+    super.initState();
+    obtenerProyectos();
+  }
+
+  Future<void> obtenerProyectos() async {
+    List<Project> fetchedProjects =
+        await FirebaseUtils.obtenerProyectosDesdeFirebase();
+    setState(() {
+      projects = fetchedProjects;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -33,7 +54,7 @@ class ProjectList extends StatelessWidget {
             trailing: IconButton(
               icon: const Icon(Icons.delete),
               onPressed: () {
-                onDelete(project);
+                widget.onDelete(project);
               },
             ),
             onTap: () {
@@ -42,8 +63,8 @@ class ProjectList extends StatelessWidget {
                 MaterialPageRoute(
                   builder: (context) => ProjectDetailScreen(
                     project: project,
-                    onDelete: onDelete,
-                    changeProjectName: changeProjectName,
+                    onDelete: widget.onDelete,
+                    changeProjectName: widget.changeProjectName,
                   ),
                 ),
               );
