@@ -9,8 +9,6 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  flutter_test:
-    sdk: flutter
   flutter_driver:
     sdk: flutter
   english_words: ^4.0.0
@@ -18,6 +16,8 @@ dependencies:
   firebase_core: ^2.21.0
   firebase_auth: ^4.12.1
   fl_chart: ^0.64.0
+  cloud_firestore: ^4.13.3
+  firebase_database: ^10.3.6
 
 dev_dependencies:
   flutter_test:
