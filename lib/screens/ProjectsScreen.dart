@@ -67,6 +67,33 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
     );
   }
 
+  Future<void> _showDeleteConfirmationDialog(Project project) async {
+    return showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Eliminar Proyecto'),
+          content: const Text('¿Seguro que quieres eliminar este proyecto?'),
+          actions: <Widget>[
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              child: const Text('Cancelar'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                _deleteProject(project);
+                Navigator.of(context).pop();
+              },
+              child: const Text('Eliminar'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   void _deleteProject(Project project) async {
     try {
       await FirebaseUtils.deleteProject(project.name);
@@ -82,8 +109,9 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       body: ProjectList(
-        onDelete: _deleteProject,
+        onDelete: _showDeleteConfirmationDialog,
         changeProjectName: _changeProjectName,
+        projects: projects,
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
