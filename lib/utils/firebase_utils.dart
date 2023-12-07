@@ -50,7 +50,42 @@ class FirebaseUtils {
         .update({'name': newName});
   }
 
+  static Future<void> updateProjectSupervisor(
+      String projectId, String newSupervisor) async {
+    await _database
+        .child('projects')
+        .child(projectId)
+        .update({'supervisor': newSupervisor});
+  }
+
   static Future<void> deleteProject(String projectName) async {
     await _database.child('projects').child(projectName).remove();
+  }
+
+  static Stream<List<Project>> projectsStreamFromFirebase() {
+    return FirebaseDatabase.instance
+        .ref()
+        .child('projects')
+        .onValue
+        .map((event) {
+      final projects = <Project>[];
+      if (event.snapshot.value != null &&
+          event.snapshot.value is Map<dynamic, dynamic>) {
+        Map<dynamic, dynamic> projectsMap =
+            event.snapshot.value as Map<dynamic, dynamic>;
+        projects.addAll(projectsMap.entries.map((entry) {
+          return Project(
+            id: entry.key.toString(),
+            name: entry.value['name'],
+            supervisor: entry.value['supervisor'],
+            stages: (entry.value['stages'] as List<dynamic>?)
+                    ?.map((stage) => Stage.fromMap(stage))
+                    .toList() ??
+                [],
+          );
+        }));
+      }
+      return projects;
+    });
   }
 }
