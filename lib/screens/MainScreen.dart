@@ -56,7 +56,17 @@ class _MainScreenState extends State<MainScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Kpinza'),
+        title: Row(
+          children: [
+            Image.asset(
+              'assets/logo_kpinza.png',
+              height: 40,
+              width: 40,
+            ),
+            const SizedBox(width: 8),
+            const Text('Kpinza'),
+          ],
+        ),
         actions: <Widget>[
           IconButton(
             icon: const Icon(Icons.logout),
