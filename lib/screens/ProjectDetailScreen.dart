@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:kpinza_mobile/components/CreateStageOrTaskForm.dart';
 import 'package:kpinza_mobile/components/Project.dart';
 import 'package:firebase_database/firebase_database.dart';
+import 'package:kpinza_mobile/utils/firebase_utils.dart';
 
 class ProjectDetailScreen extends StatefulWidget {
   Project project;
@@ -27,24 +28,29 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
   @override
   void initState() {
     super.initState();
-    _nameController.text = widget.project.name;
-    _editedSupervisor = widget.project.supervisor;
-    if (widget.project.stages.isNotEmpty) {
-      selectedStage = widget.project.stages.first.name;
+    obtenerDetallesProyecto();
+  }
+
+  void obtenerDetallesProyecto() async {
+    try {
+      List<Project> fetchedProjects =
+          await FirebaseUtils.obtenerProyectosDesdeFirebase();
+      if (fetchedProjects.isNotEmpty) {
+        setState(() {
+          widget.project = fetchedProjects.first;
+          _nameController.text = widget.project.name;
+          _editedSupervisor = widget.project.supervisor;
+          if (widget.project.stages.isNotEmpty) {
+            selectedStage = widget.project.stages.first.name;
+          }
+        });
+      }
+    } catch (e) {
+      print('Error al obtener detalles del proyecto: $e');
     }
   }
 
-  void _saveName() {
-    final newName = _nameController.text;
-    widget.changeProjectName(widget.project, newName);
-    setState(() {
-      widget.project =
-          widget.project.copyWith(name: newName, supervisor: _editedSupervisor);
-      Navigator.pop(context);
-    });
-  }
-
-  void _editSupervisor() {
+  void _editSupervisor() async {
     showDialog(
       context: context,
       builder: (BuildContext context) {
@@ -70,13 +76,18 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
               child: const Text('Cancelar'),
             ),
             ElevatedButton(
-              onPressed: () {
-                setState(() {
-                  // Actualizar el supervisor al confirmar los cambios
-                  widget.project =
-                      widget.project.copyWith(supervisor: _editedSupervisor);
-                });
-                Navigator.of(context).pop();
+              onPressed: () async {
+                try {
+                  await FirebaseUtils.updateProjectSupervisor(
+                      widget.project.id, _editedSupervisor);
+                  setState(() {
+                    widget.project =
+                        widget.project.copyWith(supervisor: _editedSupervisor);
+                  });
+                  Navigator.of(context).pop();
+                } catch (e) {
+                  print('Error al actualizar el supervisor: $e');
+                }
               },
               child: const Text('Guardar'),
             ),
@@ -84,6 +95,19 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
         );
       },
     );
+  }
+
+  void _saveName() async {
+    final newName = _nameController.text;
+    try {
+      await FirebaseUtils.updateProjectName(widget.project.id, newName);
+      setState(() {
+        widget.project = widget.project.copyWith(name: newName);
+        Navigator.pop(context);
+      });
+    } catch (e) {
+      print('Error al guardar el nombre del proyecto: $e');
+    }
   }
 
   void _createStage(String stageName) {
