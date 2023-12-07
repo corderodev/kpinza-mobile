@@ -156,13 +156,38 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
   }
 
   void _deleteTask(Stage stage, Task task) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Eliminar Tarea'),
+          content: const Text('¿Seguro que quieres eliminar esta tarea?'),
+          actions: <Widget>[
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              child: const Text('Cancelar'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                setState(() {
+                  _removeTask(stage, task);
+                });
+                Navigator.of(context).pop();
+              },
+              child: const Text('Eliminar'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _removeTask(Stage stage, Task task) {
+    final updatedTasks = stage.tasks.where((t) => t != task).toList();
     setState(() {
-      final stageIndex = widget.project.stages.indexOf(stage);
-      if (stageIndex != -1) {
-        final updatedTasks = stage.tasks.where((t) => t != task).toList();
-        final updatedStage = stage.copyWith(tasks: updatedTasks);
-        widget.project.stages[stageIndex] = updatedStage;
-      }
+      stage.tasks = updatedTasks;
     });
   }
 
