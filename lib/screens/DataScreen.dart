@@ -86,6 +86,26 @@ class _DataScreenState extends State<DataScreen> {
               ),
             ),
           );
+        } else {
+          // Mostrar mensaje de error si no hay métricas disponibles
+          showDialog(
+            context: context,
+            builder: (BuildContext context) {
+              return AlertDialog(
+                title: const Text('Error'),
+                content: const Text(
+                    'No hay métricas disponibles para este proyecto.'),
+                actions: <Widget>[
+                  TextButton(
+                    onPressed: () {
+                      Navigator.of(context).pop();
+                    },
+                    child: const Text('Cerrar'),
+                  ),
+                ],
+              );
+            },
+          );
         }
       }
     }, onError: (error) {
