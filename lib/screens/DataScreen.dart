@@ -33,7 +33,10 @@ class _DataScreenState extends State<DataScreen> {
 
           projectsMap.forEach((key, value) {
             fetchedProjects.add(Project(
-                id: key, name: value['name'], supervisor: value['supervisor']));
+                id: key,
+                name: value['name'],
+                supervisor: value['supervisor'],
+                tasks: []));
           });
 
           setState(() {
@@ -137,15 +140,19 @@ class _DataScreenState extends State<DataScreen> {
               itemCount: projects.length,
               itemBuilder: (context, index) {
                 final project = projects[index];
-                return Card(
-                  margin: const EdgeInsets.all(8.0),
-                  child: ListTile(
-                    title: Text(project.name),
-                    onTap: () {
-                      _showProjectMetrics(project);
-                    },
-                  ),
-                );
+                if (project.tasks != null && project.tasks!.isNotEmpty) {
+                  return Card(
+                    margin: const EdgeInsets.all(8.0),
+                    child: ListTile(
+                      title: Text(project.name),
+                      onTap: () {
+                        _showProjectMetrics(project);
+                      },
+                    ),
+                  );
+                } else {
+                  return Container();
+                }
               },
             ),
           ),
