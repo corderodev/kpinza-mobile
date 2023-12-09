@@ -3,12 +3,14 @@ class Project {
   String name;
   List<Stage> stages;
   String supervisor;
+  List<Task>? tasks;
 
   Project({
     required this.id,
     required this.name,
     required this.supervisor,
     List<Stage>? stages,
+    this.tasks,
   }) : stages = stages ?? [];
 
   Map<String, dynamic> toMap() {
@@ -17,6 +19,8 @@ class Project {
       'name': name,
       'supervisor': supervisor,
       'stages': stages.map((stage) => stage.toMap()).toList(),
+      'tasks':
+          tasks != null ? tasks!.map((task) => task.toMap()).toList() : null,
     };
   }
 
@@ -25,12 +29,14 @@ class Project {
     String? name,
     String? supervisor,
     List<Stage>? stages,
+    List<Task>? tasks,
   }) {
     return Project(
       id: id ?? this.id,
       name: name ?? this.name,
       supervisor: supervisor ?? this.supervisor,
       stages: stages ?? this.stages,
+      tasks: tasks ?? this.tasks,
     );
   }
 }
