@@ -22,11 +22,17 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
   }
 
   Future<void> obtenerProyectos() async {
-    List<Project> fetchedProjects =
-        await FirebaseUtils.obtenerProyectosDesdeFirebase();
-    setState(() {
-      projects = fetchedProjects;
-    });
+    String? userUid = UserGlobal.uid;
+
+    if (userUid != null) {
+      List<Project> fetchedProjects =
+          await FirebaseUtils.obtenerProyectosDesdeFirebase(userUid);
+      setState(() {
+        projects = fetchedProjects;
+      });
+    } else {
+      print('Error: El uid del usuario es nulo');
+    }
   }
 
   void _changeProjectName(Project project, String newName) async {

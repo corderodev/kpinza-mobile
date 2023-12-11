@@ -1,6 +1,9 @@
+// ignore_for_file: avoid_print
+
 import 'package:firebase_database/firebase_database.dart';
 import 'package:kpinza_mobile/class/Project.dart';
 import 'package:kpinza_mobile/class/User.dart';
+import 'package:kpinza_mobile/screens/AuthScreen.dart';
 
 class FirebaseUtils {
   static final DatabaseReference _database = FirebaseDatabase.instance.ref();
@@ -13,34 +16,46 @@ class FirebaseUtils {
     });
   }
 
-  static Future<List<Project>> obtenerProyectosDesdeFirebase() async {
+  static Future<List<Project>> obtenerProyectosDesdeFirebase(
+      String userUid) async {
     try {
-      var snapshotEvent = await _database.child('projects').once();
+      var snapshotEvent = await _database
+          .child('users')
+          .child(userUid)
+          .child('projects')
+          .once();
       DataSnapshot snapshot = snapshotEvent.snapshot;
 
       if (snapshot.value != null && snapshot.value is Map<dynamic, dynamic>) {
         Map<dynamic, dynamic> projectsMap =
             snapshot.value as Map<dynamic, dynamic>;
-        List<Project> proyectos = projectsMap.entries.map((entry) {
-          Map<String, dynamic> projectData =
-              entry.value.cast<String, dynamic>();
+        List<Project> proyectos = [];
 
-          List<Stage> stages = [];
-          if (projectData.containsKey('stages') &&
-              projectData['stages'] is List) {
-            stages = (projectData['stages'] as List).map((stage) {
-              Map<String, dynamic> stageData = stage.cast<String, dynamic>();
-              return Stage.fromMap(stageData);
-            }).toList();
+        projectsMap.forEach((key, value) {
+          Map<String, dynamic> projectData = value.cast<String, dynamic>();
+
+          // Agregar los proyectos solo si coinciden con el usuario actual
+          if (projectData.containsKey('userId') &&
+              projectData['userId'] == userUid) {
+            List<Stage> stages = [];
+            if (projectData.containsKey('stages') &&
+                projectData['stages'] is List) {
+              stages = (projectData['stages'] as List).map((stage) {
+                Map<String, dynamic> stageData = stage.cast<String, dynamic>();
+                return Stage.fromMap(stageData);
+              }).toList();
+            }
+
+            proyectos.add(
+              Project(
+                id: key.toString(),
+                name: projectData['name'],
+                supervisor: projectData['supervisor'],
+                stages: stages,
+              ),
+            );
           }
-
-          return Project(
-            id: entry.key.toString(),
-            name: projectData['name'],
-            supervisor: projectData['supervisor'],
-            stages: stages,
-          );
-        }).toList();
+        });
 
         return proyectos;
       } else {
@@ -52,11 +67,46 @@ class FirebaseUtils {
     }
   }
 
+  static Stream<List<Project>> projectsStreamFromFirebase() {
+    String? userUid = UserGlobal.uid;
+    if (userUid != null) {
+      return FirebaseDatabase.instance
+          .ref()
+          .child('users')
+          .child(userUid)
+          .child('projects')
+          .onValue
+          .map((event) {
+        final projects = <Project>[];
+        if (event.snapshot.value != null &&
+            event.snapshot.value is Map<dynamic, dynamic>) {
+          Map<dynamic, dynamic> projectsMap =
+              event.snapshot.value as Map<dynamic, dynamic>;
+          projects.addAll(projectsMap.entries.map((entry) {
+            return Project(
+              id: entry.key.toString(),
+              name: entry.value['name'],
+              supervisor: entry.value['supervisor'],
+            );
+          }));
+        }
+        return projects;
+      });
+    } else {
+      print('Error: El uid del usuario es nulo');
+      return Stream.value([]);
+    }
+  }
+
   static Future<Project?> obtenerProyectoPorIdDesdeFirebase(
-      String projectId) async {
+      String userUid, String projectId) async {
     try {
-      var snapshotEvent =
-          await _database.child('projects').child(projectId).once();
+      var snapshotEvent = await _database
+          .child('users')
+          .child(userUid)
+          .child('projects')
+          .child(projectId)
+          .once();
       DataSnapshot snapshot = snapshotEvent.snapshot;
 
       if (snapshot.value != null && snapshot.value is Map<dynamic, dynamic>) {
@@ -171,28 +221,5 @@ class FirebaseUtils {
 
   static Future<void> deleteProject(String projectName) async {
     await _database.child('projects').child(projectName).remove();
-  }
-
-  static Stream<List<Project>> projectsStreamFromFirebase() {
-    return FirebaseDatabase.instance
-        .ref()
-        .child('projects')
-        .onValue
-        .map((event) {
-      final projects = <Project>[];
-      if (event.snapshot.value != null &&
-          event.snapshot.value is Map<dynamic, dynamic>) {
-        Map<dynamic, dynamic> projectsMap =
-            event.snapshot.value as Map<dynamic, dynamic>;
-        projects.addAll(projectsMap.entries.map((entry) {
-          return Project(
-            id: entry.key.toString(),
-            name: entry.value['name'],
-            supervisor: entry.value['supervisor'],
-          );
-        }));
-      }
-      return projects;
-    });
   }
 }
