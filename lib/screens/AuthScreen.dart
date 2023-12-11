@@ -1,6 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:kpinza_mobile/screens/MainScreen.dart';
+import 'package:kpinza_mobile/utils/firebase_utils.dart';
+import 'package:kpinza_mobile/class/User.dart';
+
+class UserGlobal {
+  static String? uid;
+}
 
 class AuthScreen extends StatefulWidget {
   const AuthScreen({Key? key}) : super(key: key);
@@ -22,25 +28,39 @@ class _AuthScreenState extends State<AuthScreen> {
 
     try {
       if (_isSignIn) {
-        await FirebaseAuth.instance.signInWithEmailAndPassword(
+        UserCredential userCredential =
+            await FirebaseAuth.instance.signInWithEmailAndPassword(
           email: email,
           password: password,
         );
+        UserGlobal.uid = userCredential.user!.uid;
       } else {
-        await FirebaseAuth.instance.createUserWithEmailAndPassword(
+        UserCredential userCredential =
+            await FirebaseAuth.instance.createUserWithEmailAndPassword(
           email: email,
           password: password,
         );
+
+        await FirebaseUtils.saveUser(AppUser(
+          uid: userCredential.user!.uid,
+          email: email,
+          alias: _aliasController.text,
+        ));
+
+        UserGlobal.uid = userCredential.user!.uid;
       }
+
       Navigator.of(context).pushReplacement(
         MaterialPageRoute(
           builder: (context) => const MainScreen(),
         ),
       );
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text('Error: $e'),
-      ));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error: $e'),
+        ),
+      );
     }
   }
 

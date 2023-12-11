@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:kpinza_mobile/components/CreateProjectForm.dart';
 import 'package:kpinza_mobile/components/ProjectList.dart';
 import 'package:kpinza_mobile/class/Project.dart';
-import 'package:kpinza_mobile/screens/ProjectDetailScreen.dart';
 import 'package:kpinza_mobile/utils/firebase_utils.dart';
+import 'package:kpinza_mobile/screens/AuthScreen.dart';
 
 class ProjectsScreen extends StatefulWidget {
   const ProjectsScreen({Key? key}) : super(key: key);
@@ -43,25 +43,30 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
     }
   }
 
-  Future<void> _createProject(String projectName, String supervisor) async {
+  Future<void> _createProject(String projectName) async {
     try {
-      await FirebaseUtils.saveProject(
-        Project(id: projectName, name: projectName, supervisor: supervisor),
-      );
-      obtenerProyectos();
+      String? userUid = UserGlobal.uid;
+
+      if (userUid != null) {
+        Project newProject =
+            Project(id: projectName, name: projectName, supervisor: '');
+
+        await FirebaseUtils.saveProject(userUid, newProject);
+        obtenerProyectos();
+      } else {
+        print('Error: El uid del usuario es nulo');
+      }
     } catch (e) {
       print('Error al crear y guardar el proyecto: $e');
     }
   }
 
   Future<void> _showCreateProjectForm(BuildContext context) async {
-    String supervisor = "Nombre del Supervisor";
-
     await showDialog(
       context: context,
       builder: (BuildContext context) {
         return CreateProjectForm(onSubmit: (projectName) {
-          _createProject(projectName, supervisor);
+          _createProject(projectName);
         });
       },
     );

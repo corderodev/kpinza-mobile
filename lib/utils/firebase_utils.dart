@@ -87,13 +87,70 @@ class FirebaseUtils {
     }
   }
 
-  static Future<void> saveProject(Project project) async {
-    await _database.child('projects').child(project.id).set({
-      'id': project.id,
-      'name': project.name,
-      'supervisor': project.supervisor,
-      'stages': project.stages.map((stage) => stage.toMap()).toList(),
-    });
+  static Future<void> saveProject(String userId, Project project) async {
+    try {
+      await _database
+          .child('users')
+          .child(userId)
+          .child('projects')
+          .child(project.id)
+          .set({
+        'id': project.id,
+        'name': project.name,
+        'supervisor': '',
+        'stages': [],
+      });
+    } catch (e) {
+      print('Error al guardar el proyecto: $e');
+    }
+  }
+
+  static Future<void> saveBrief(String projectId, int totalTasks,
+      int completedTasks, int inProgressTasks, int pendingTasks) async {
+    try {
+      final briefRef = _database.child('projects/$projectId/brief');
+      await briefRef.set({
+        'totalTasks': totalTasks,
+        'completedTasks': completedTasks,
+        'inProgressTasks': inProgressTasks,
+        'pendingTasks': pendingTasks,
+      });
+    } catch (e) {
+      print('Error al guardar el brief en Firebase: $e');
+    }
+  }
+
+  static Future<void> saveStage(String projectId, Stage stage) async {
+    try {
+      final stageRef = _database.child('projects/$projectId/stages').push();
+      await stageRef.set({
+        'name': stage.name,
+        'tasks': stage.tasks.map((task) => task.toMap()).toList(),
+      });
+    } catch (e) {
+      print('Error al guardar la etapa en Firebase: $e');
+    }
+  }
+
+  static Future<void> saveTask(
+      String projectId, String stageId, Task task) async {
+    try {
+      final taskRef =
+          _database.child('projects/$projectId/stages/$stageId/tasks').push();
+      await taskRef.set({
+        'name': task.name,
+        'responsable': task.responsable ?? '',
+        'status': task.status,
+        'startDate': task.startDate.toString(),
+        'dueDate': task.dueDate.toString(),
+        'estimatedTime': task.estimatedTime,
+        'realTime': task.realTime,
+        'realStartDate': task.realStartDate.toString(),
+        'realDueDate': task.realDueDate.toString(),
+      });
+    } catch (e) {
+      print('Error al guardar la tarea en Firebase: $e');
+    }
   }
 
   static Future<void> updateProjectName(
@@ -137,53 +194,5 @@ class FirebaseUtils {
       }
       return projects;
     });
-  }
-
-  static Future<void> saveStage(String projectId, Stage stage) async {
-    try {
-      final stageRef = _database.child('projects/$projectId/stages').push();
-      await stageRef.set({
-        'name': stage.name,
-        'tasks': stage.tasks.map((task) => task.toMap()).toList(),
-      });
-    } catch (e) {
-      print('Error al guardar la etapa en Firebase: $e');
-    }
-  }
-
-  static Future<void> saveTask(
-      String projectId, String stageId, Task task) async {
-    try {
-      final taskRef =
-          _database.child('projects/$projectId/stages/$stageId/tasks').push();
-      await taskRef.set({
-        'name': task.name,
-        'responsable': task.responsable ?? '',
-        'status': task.status,
-        'startDate': task.startDate.toString(),
-        'dueDate': task.dueDate.toString(),
-        'estimatedTime': task.estimatedTime,
-        'realTime': task.realTime,
-        'realStartDate': task.realStartDate.toString(),
-        'realDueDate': task.realDueDate.toString(),
-      });
-    } catch (e) {
-      print('Error al guardar la tarea en Firebase: $e');
-    }
-  }
-
-  static Future<void> saveBrief(String projectId, int totalTasks,
-      int completedTasks, int inProgressTasks, int pendingTasks) async {
-    try {
-      final briefRef = _database.child('projects/$projectId/brief');
-      await briefRef.set({
-        'totalTasks': totalTasks,
-        'completedTasks': completedTasks,
-        'inProgressTasks': inProgressTasks,
-        'pendingTasks': pendingTasks,
-      });
-    } catch (e) {
-      print('Error al guardar el brief en Firebase: $e');
-    }
   }
 }
