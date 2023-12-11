@@ -37,7 +37,8 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
 
   void _changeProjectName(Project project, String newName) async {
     try {
-      await FirebaseUtils.updateProjectName(project.name, newName);
+      String userUid = UserGlobal.uid ?? '';
+      await FirebaseUtils.updateProjectName(userUid, project.name, newName);
       setState(() {
         final projectIndex = projects.indexWhere((p) => p.name == project.name);
         if (projectIndex != -1) {
@@ -107,7 +108,8 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
 
   void _deleteProject(Project project) async {
     try {
-      await FirebaseUtils.deleteProject(project.name);
+      String userUid = UserGlobal.uid ?? '';
+      await FirebaseUtils.deleteProject(userUid, project.name);
       setState(() {
         projects.remove(project);
       });

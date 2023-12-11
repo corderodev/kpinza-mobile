@@ -3,6 +3,7 @@ import 'package:kpinza_mobile/components/CreateStageOrTaskForm.dart';
 import 'package:kpinza_mobile/class/Project.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:kpinza_mobile/utils/firebase_utils.dart';
+import 'package:kpinza_mobile/screens/AuthScreen.dart';
 
 class ProjectDetailScreen extends StatefulWidget {
   Project project;
@@ -33,9 +34,10 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
 
   void obtenerDetallesProyecto() async {
     try {
+      String? userUid = UserGlobal.uid;
       Project? fetchedProject =
           await FirebaseUtils.obtenerProyectoPorIdDesdeFirebase(
-              widget.project.id);
+              userUid ?? '', widget.project.id);
       if (fetchedProject != null) {
         setState(() {
           widget.project = fetchedProject;
@@ -76,8 +78,9 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
             ElevatedButton(
               onPressed: () async {
                 try {
+                  String userUid = UserGlobal.uid ?? '';
                   await FirebaseUtils.updateProjectSupervisor(
-                      widget.project.id, _editedSupervisor);
+                      userUid, widget.project.id, _editedSupervisor);
                   setState(() {
                     widget.project =
                         widget.project.copyWith(supervisor: _editedSupervisor);
@@ -102,7 +105,9 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
   void _saveName() async {
     final newName = _nameController.text;
     try {
-      await FirebaseUtils.updateProjectName(widget.project.id, newName);
+      String userUid = UserGlobal.uid ?? '';
+      await FirebaseUtils.updateProjectName(
+          userUid, widget.project.id, newName);
       setState(() {
         widget.project = widget.project.copyWith(name: newName);
         Navigator.pop(context);
@@ -113,13 +118,16 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
   }
 
   void _createStage(String stageName) async {
-    final newStage = Stage(name: stageName, tasks: []);
-    setState(() {
-      widget.project.stages.add(newStage);
-    });
-
     try {
-      await FirebaseUtils.saveStage(widget.project.id, newStage);
+      final newStage = Stage(name: stageName, tasks: []);
+      String userUid = UserGlobal.uid ?? '';
+      String projectId = widget.project.id;
+
+      await FirebaseUtils.saveStage(userUid, projectId, newStage);
+
+      setState(() {
+        widget.project.stages.add(newStage);
+      });
     } catch (e) {
       print('Error al guardar la nueva etapa: $e');
     }
@@ -178,14 +186,25 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
       realDueDate: selectedRealDueDate,
     );
 
-    final targetStage =
-        widget.project.stages.firstWhere((s) => s.name == stageName);
-    setState(() {
-      targetStage.tasks.add(newTask);
-    });
-
     try {
-      await FirebaseUtils.saveTask(widget.project.id, stageName, newTask);
+      String? userUid = UserGlobal.uid;
+
+      if (userUid != null) {
+        await FirebaseUtils.saveTask(
+          userUid,
+          widget.project.id,
+          stageName,
+          newTask,
+        );
+
+        final targetStage =
+            widget.project.stages.firstWhere((s) => s.name == stageName);
+        setState(() {
+          targetStage.tasks.add(newTask);
+        });
+      } else {
+        print('UserUid es nulo. No se puede guardar la tarea.');
+      }
     } catch (e) {
       print('Error al guardar la nueva tarea: $e');
     }
@@ -602,8 +621,11 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
     }
 
     try {
-      FirebaseUtils.saveBrief(widget.project.id, totalTasks, completedTasks,
-          inProgressTasks, pendingTasks);
+      String? userUid = UserGlobal.uid;
+      if (userUid != null) {
+        FirebaseUtils.saveBrief(userUid, widget.project.id, totalTasks,
+            completedTasks, inProgressTasks, pendingTasks);
+      }
     } catch (e) {
       print('Error al guardar el brief en la base de datos: $e');
     }

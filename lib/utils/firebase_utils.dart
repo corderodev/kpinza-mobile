@@ -34,7 +34,6 @@ class FirebaseUtils {
         projectsMap.forEach((key, value) {
           Map<String, dynamic> projectData = value.cast<String, dynamic>();
 
-          // Agregar los proyectos solo si coinciden con el usuario actual
           if (projectData.containsKey('userId') &&
               projectData['userId'] == userUid) {
             List<Stage> stages = [];
@@ -155,38 +154,49 @@ class FirebaseUtils {
     }
   }
 
-  static Future<void> saveBrief(String projectId, int totalTasks,
-      int completedTasks, int inProgressTasks, int pendingTasks) async {
+  static Future<void> saveBrief(
+      String userUid,
+      String projectId,
+      int totalTasks,
+      int completedTasks,
+      int inProgressTasks,
+      int pendingTasks) async {
     try {
-      final briefRef = _database.child('projects/$projectId/brief');
+      final briefRef =
+          _database.child('users/$userUid/projects/$projectId/brief');
       await briefRef.set({
         'totalTasks': totalTasks,
         'completedTasks': completedTasks,
         'inProgressTasks': inProgressTasks,
         'pendingTasks': pendingTasks,
       });
-    } catch (e) {
-      print('Error al guardar el brief en Firebase: $e');
+    } catch (e, stackTrace) {
+      print('Error al guardar el brief en Firebase: $e\n$stackTrace');
+      throw e;
     }
   }
 
-  static Future<void> saveStage(String projectId, Stage stage) async {
+  static Future<void> saveStage(
+      String userUid, String projectId, Stage stage) async {
     try {
-      final stageRef = _database.child('projects/$projectId/stages').push();
+      final stageRef =
+          _database.child('users/$userUid/projects/$projectId/stages').push();
       await stageRef.set({
         'name': stage.name,
         'tasks': stage.tasks.map((task) => task.toMap()).toList(),
       });
-    } catch (e) {
-      print('Error al guardar la etapa en Firebase: $e');
+    } catch (e, stackTrace) {
+      print('Error al guardar la etapa en Firebase: $e\n$stackTrace');
+      throw e;
     }
   }
 
   static Future<void> saveTask(
-      String projectId, String stageId, Task task) async {
+      String userUid, String projectId, String stageId, Task task) async {
     try {
-      final taskRef =
-          _database.child('projects/$projectId/stages/$stageId/tasks').push();
+      final taskRef = _database
+          .child('users/$userUid/projects/$projectId/stages/$stageId/tasks')
+          .push();
       await taskRef.set({
         'name': task.name,
         'responsable': task.responsable ?? '',
@@ -198,28 +208,53 @@ class FirebaseUtils {
         'realStartDate': task.realStartDate.toString(),
         'realDueDate': task.realDueDate.toString(),
       });
-    } catch (e) {
-      print('Error al guardar la tarea en Firebase: $e');
+    } catch (e, stackTrace) {
+      print('Error al guardar la tarea en Firebase: $e\n$stackTrace');
+      throw e;
     }
   }
 
   static Future<void> updateProjectName(
-      String projectName, String newName) async {
-    await _database
-        .child('projects')
-        .child(projectName)
-        .update({'name': newName});
+      String userUid, String projectName, String newName) async {
+    try {
+      await _database
+          .child('users')
+          .child(userUid)
+          .child('projects')
+          .child(projectName)
+          .update({'name': newName});
+    } catch (e, stackTrace) {
+      print('Error al actualizar el nombre del proyecto: $e\n$stackTrace');
+      throw e;
+    }
   }
 
   static Future<void> updateProjectSupervisor(
-      String projectId, String newSupervisor) async {
-    await _database
-        .child('projects')
-        .child(projectId)
-        .update({'supervisor': newSupervisor});
+      String userUid, String projectId, String newSupervisor) async {
+    try {
+      await _database
+          .child('users')
+          .child(userUid)
+          .child('projects')
+          .child(projectId)
+          .update({'supervisor': newSupervisor});
+    } catch (e, stackTrace) {
+      print('Error al actualizar el supervisor del proyecto: $e\n$stackTrace');
+      throw e;
+    }
   }
 
-  static Future<void> deleteProject(String projectName) async {
-    await _database.child('projects').child(projectName).remove();
+  static Future<void> deleteProject(String userUid, String projectName) async {
+    try {
+      await _database
+          .child('users')
+          .child(userUid)
+          .child('projects')
+          .child(projectName)
+          .remove();
+    } catch (e, stackTrace) {
+      print('Error al eliminar el proyecto: $e\n$stackTrace');
+      throw e;
+    }
   }
 }
