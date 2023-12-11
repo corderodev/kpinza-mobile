@@ -1,5 +1,6 @@
 import 'package:firebase_database/firebase_database.dart';
-import 'package:kpinza_mobile/components/Project.dart';
+import 'package:kpinza_mobile/class/Project.dart';
+// import 'package:kpinza_mobile/class/User.dart';
 
 class FirebaseUtils {
   static final DatabaseReference _database = FirebaseDatabase.instance.ref();
@@ -78,10 +79,6 @@ class FirebaseUtils {
             id: entry.key.toString(),
             name: entry.value['name'],
             supervisor: entry.value['supervisor'],
-            stages: (entry.value['stages'] as List<dynamic>?)
-                    ?.map((stage) => Stage.fromMap(stage))
-                    .toList() ??
-                [],
           );
         }));
       }

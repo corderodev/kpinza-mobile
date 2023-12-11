@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:kpinza_mobile/components/Project.dart';
+import 'package:kpinza_mobile/class/Project.dart';
 import 'package:kpinza_mobile/screens/ProjectDetailScreen.dart';
 import 'package:kpinza_mobile/utils/firebase_utils.dart';
 
@@ -24,7 +24,15 @@ class _ProjectListState extends State<ProjectList> {
   @override
   void initState() {
     super.initState();
-    _projectsStream = FirebaseUtils.projectsStreamFromFirebase();
+    _initializeProjectsStream();
+  }
+
+  void _initializeProjectsStream() {
+    try {
+      _projectsStream = FirebaseUtils.projectsStreamFromFirebase();
+    } catch (error) {
+      print('Error al cargar proyectos: $error');
+    }
   }
 
   @override
@@ -38,13 +46,13 @@ class _ProjectListState extends State<ProjectList> {
           );
         }
 
-        if (snapshot.hasError) {
+        if (snapshot.hasError || !snapshot.hasData) {
           return const Center(
             child: Text('Error al cargar los proyectos.'),
           );
         }
 
-        final projects = snapshot.data ?? [];
+        final projects = snapshot.data!;
 
         if (projects.isEmpty) {
           return const Center(
