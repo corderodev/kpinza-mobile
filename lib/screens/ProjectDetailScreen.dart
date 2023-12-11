@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:kpinza_mobile/components/CreateStageOrTaskForm.dart';
-import 'package:kpinza_mobile/components/Project.dart';
+import 'package:kpinza_mobile/class/Project.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:kpinza_mobile/utils/firebase_utils.dart';
 
@@ -110,11 +110,18 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
     }
   }
 
-  void _createStage(String stageName) {
+  void _createStage(String stageName) async {
     final newStage = Stage(name: stageName, tasks: []);
     setState(() {
       widget.project.stages.add(newStage);
     });
+
+    try {
+      await FirebaseUtils.saveStage(widget.project.id, newStage);
+    } catch (e) {
+      print('Error al guardar la nueva etapa: $e');
+    }
+
     Navigator.of(context).pop();
   }
 
@@ -158,7 +165,7 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
     String realTime,
     DateTime? selectedRealStartDate,
     DateTime? selectedRealDueDate,
-  ) {
+  ) async {
     final newTask = Task(
       name: taskName,
       responsable: responsable,
@@ -176,6 +183,13 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
     setState(() {
       targetStage.tasks.add(newTask);
     });
+
+    try {
+      await FirebaseUtils.saveTask(widget.project.id, stageName, newTask);
+    } catch (e) {
+      print('Error al guardar la nueva tarea: $e');
+    }
+
     Navigator.of(context).pop();
   }
 
@@ -422,12 +436,18 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
                         if (selectedDate != null) {
                           setState(() {
                             realStartDate = selectedDate;
+                            if (realDueDate != null &&
+                                realStartDate!.isAfter(realDueDate!)) {
+                              realDueDate = realStartDate;
+                            }
                           });
                         }
                       },
-                      child: Text(realStartDate != null
-                          ? realStartDate!.toLocal().toString().split(' ')[0]
-                          : 'Seleccionar fecha'),
+                      child: Text(
+                        realStartDate != null
+                            ? realStartDate!.toLocal().toString().split(' ')[0]
+                            : 'Seleccionar fecha',
+                      ),
                     ),
                     const Text('Fecha de Entrega Real:'),
                     TextButton(
@@ -441,13 +461,39 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
 
                         if (selectedDate != null) {
                           setState(() {
-                            realDueDate = selectedDate;
+                            if (realStartDate != null &&
+                                selectedDate.isAfter(realStartDate!) &&
+                                selectedDate.isAfter(DateTime.now())) {
+                              realDueDate = selectedDate;
+                            } else {
+                              // Mostrar mensaje de error si la fecha es inválida.
+                              showDialog(
+                                context: context,
+                                builder: (BuildContext context) {
+                                  return AlertDialog(
+                                    title: const Text('Error'),
+                                    content: const Text(
+                                        'Por favor, selecciona una fecha válida.'),
+                                    actions: [
+                                      TextButton(
+                                        onPressed: () {
+                                          Navigator.of(context).pop();
+                                        },
+                                        child: const Text('OK'),
+                                      ),
+                                    ],
+                                  );
+                                },
+                              );
+                            }
                           });
                         }
                       },
-                      child: Text(realDueDate != null
-                          ? realDueDate!.toLocal().toString().split(' ')[0]
-                          : 'Seleccionar fecha'),
+                      child: Text(
+                        realDueDate != null
+                            ? realDueDate!.toLocal().toString().split(' ')[0]
+                            : 'Seleccionar fecha',
+                      ),
                     ),
                     DropdownButton<String>(
                       value: selectedStage,
@@ -562,7 +608,13 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
       }
     }
 
-    // Mostrar el brief en un AlertDialog
+    try {
+      FirebaseUtils.saveBrief(widget.project.id, totalTasks, completedTasks,
+          inProgressTasks, pendingTasks);
+    } catch (e) {
+      print('Error al guardar el brief en la base de datos: $e');
+    }
+
     showDialog(
       context: context,
       builder: (BuildContext context) {
