@@ -1,12 +1,12 @@
 import 'package:kpinza_mobile/class/Project.dart';
 
-class User {
+class AppUser {
   String uid;
   String email;
   String alias;
   List<Project> projects;
 
-  User({
+  AppUser({
     required this.uid,
     required this.email,
     required this.alias,
@@ -22,13 +22,13 @@ class User {
     };
   }
 
-  User copyWith({
+  AppUser copyWith({
     String? uid,
     String? email,
     String? alias,
     List<Project>? projects,
   }) {
-    return User(
+    return AppUser(
       uid: uid ?? this.uid,
       email: email ?? this.email,
       alias: alias ?? this.alias,
@@ -36,8 +36,8 @@ class User {
     );
   }
 
-  static User fromMap(Map<String, dynamic> map) {
-    return User(
+  static AppUser fromMap(Map<String, dynamic> map) {
+    return AppUser(
       uid: map['uid'],
       email: map['email'],
       alias: map['alias'],
