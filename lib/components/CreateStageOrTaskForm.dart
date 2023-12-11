@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:kpinza_mobile/components/Project.dart';
+import 'package:kpinza_mobile/class/Project.dart';
 
 class CreateStageOrTaskForm extends StatefulWidget {
   final List<Stage> stages;

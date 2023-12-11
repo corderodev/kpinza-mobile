@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:kpinza_mobile/components/CreateProjectForm.dart';
 import 'package:kpinza_mobile/components/ProjectList.dart';
-import 'package:kpinza_mobile/components/Project.dart';
+import 'package:kpinza_mobile/class/Project.dart';
 import 'package:kpinza_mobile/screens/ProjectDetailScreen.dart';
 import 'package:kpinza_mobile/utils/firebase_utils.dart';
 

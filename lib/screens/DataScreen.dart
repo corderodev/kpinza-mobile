@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_database/firebase_database.dart';
-import 'package:kpinza_mobile/components/Project.dart';
+import 'package:kpinza_mobile/class/Project.dart';
 import 'package:kpinza_mobile/screens/ProjectsMetricsScreen.dart';
 
 class DataScreen extends StatefulWidget {
