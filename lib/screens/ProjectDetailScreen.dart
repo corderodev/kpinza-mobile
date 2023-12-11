@@ -33,16 +33,14 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
 
   void obtenerDetallesProyecto() async {
     try {
-      List<Project> fetchedProjects =
-          await FirebaseUtils.obtenerProyectosDesdeFirebase();
-      if (fetchedProjects.isNotEmpty) {
+      Project? fetchedProject =
+          await FirebaseUtils.obtenerProyectoPorIdDesdeFirebase(
+              widget.project.id);
+      if (fetchedProject != null) {
         setState(() {
-          widget.project = fetchedProjects.first;
+          widget.project = fetchedProject;
           _nameController.text = widget.project.name;
           _editedSupervisor = widget.project.supervisor;
-          if (widget.project.stages.isNotEmpty) {
-            selectedStage = widget.project.stages.first.name;
-          }
         });
       }
     } catch (e) {
@@ -94,7 +92,11 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
           ],
         );
       },
-    );
+    ).then((_) {
+      setState(() {
+        _editedSupervisor = widget.project.supervisor;
+      });
+    });
   }
 
   void _saveName() async {
@@ -121,8 +123,6 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
     } catch (e) {
       print('Error al guardar la nueva etapa: $e');
     }
-
-    Navigator.of(context).pop();
   }
 
   void _deleteStage(Stage stage) {
@@ -189,8 +189,6 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
     } catch (e) {
       print('Error al guardar la nueva tarea: $e');
     }
-
-    Navigator.of(context).pop();
   }
 
   void _deleteTask(Stage stage, Task task) {
@@ -585,7 +583,6 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
           'pendingTasks': pendingTasks,
         });
 
-        // Guardar detalles de la tarea en la base de datos
         DatabaseReference taskReference = FirebaseDatabase.instance
             .ref()
             .child('projects/${widget.project.id}/tasks')
@@ -594,16 +591,12 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
         taskReference.set({
           'name': task.name,
           'status': task.status,
-          'startDate': task.startDate
-              .toString(), // Guardar la fecha de inicio como string
-          'dueDate': task.dueDate
-              .toString(), // Guardar la fecha de entrega como string
+          'startDate': task.startDate.toString(),
+          'dueDate': task.dueDate.toString(),
           'estimatedTime': task.estimatedTime,
           'realTime': task.realTime,
-          'realStartDate': task.realStartDate
-              .toString(), // Guardar la fecha de inicio real como string
-          'realDueDate': task.realDueDate
-              .toString(), // Guardar la fecha de entrega real como string
+          'realStartDate': task.realStartDate.toString(),
+          'realDueDate': task.realDueDate.toString(),
         });
       }
     }
