@@ -580,6 +580,8 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
     int inProgressTasks = 0;
     int pendingTasks = 0;
 
+    String? userUid = UserGlobal.uid;
+
     for (var stage in widget.project.stages) {
       totalTasks += stage.tasks.length;
       for (var task in stage.tasks) {
@@ -590,38 +592,21 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
         } else {
           pendingTasks++;
         }
-
-        DatabaseReference statusReference = FirebaseDatabase.instance
-            .ref()
-            .child('projects/${widget.project.id}/status');
-
-        statusReference.set({
-          'totalTasks': totalTasks,
-          'completedTasks': completedTasks,
-          'inProgressTasks': inProgressTasks,
-          'pendingTasks': pendingTasks,
-        });
-
-        DatabaseReference taskReference = FirebaseDatabase.instance
-            .ref()
-            .child('projects/${widget.project.id}/tasks')
-            .push();
-
-        taskReference.set({
-          'name': task.name,
-          'status': task.status,
-          'startDate': task.startDate.toString(),
-          'dueDate': task.dueDate.toString(),
-          'estimatedTime': task.estimatedTime,
-          'realTime': task.realTime,
-          'realStartDate': task.realStartDate.toString(),
-          'realDueDate': task.realDueDate.toString(),
-        });
       }
     }
 
+    DatabaseReference statusReference = FirebaseDatabase.instance
+        .ref()
+        .child('users/$userUid/projects/${widget.project.id}/brief');
+
+    statusReference.set({
+      'totalTasks': totalTasks,
+      'completedTasks': completedTasks,
+      'inProgressTasks': inProgressTasks,
+      'pendingTasks': pendingTasks,
+    });
+
     try {
-      String? userUid = UserGlobal.uid;
       if (userUid != null) {
         FirebaseUtils.saveBrief(userUid, widget.project.id, totalTasks,
             completedTasks, inProgressTasks, pendingTasks);
@@ -632,6 +617,7 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
 
     showDialog(
       context: context,
+      barrierDismissible: false,
       builder: (BuildContext context) {
         return AlertDialog(
           title: const Text('Estado del proyecto'),
