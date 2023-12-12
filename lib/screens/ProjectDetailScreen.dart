@@ -1,9 +1,12 @@
+// ignore_for_file: avoid_print, use_build_context_synchronously
+
 import 'package:flutter/material.dart';
 import 'package:kpinza_mobile/components/CreateStageOrTaskForm.dart';
 import 'package:kpinza_mobile/class/Project.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:kpinza_mobile/utils/firebase_utils.dart';
 import 'package:kpinza_mobile/screens/AuthScreen.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class ProjectDetailScreen extends StatefulWidget {
   Project project;
@@ -19,6 +22,18 @@ class ProjectDetailScreen extends StatefulWidget {
 
   @override
   _ProjectDetailScreenState createState() => _ProjectDetailScreenState();
+}
+
+class LocalStorage {
+  static Future<void> saveStagesLocally(List<String> stages) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setStringList('stages', stages);
+  }
+
+  static Future<List<String>> getStagesLocally() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getStringList('stages') ?? [];
+  }
 }
 
 class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
@@ -38,11 +53,14 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
   void obtenerDetallesProyecto() async {
     try {
       String userUid = UserGlobal.uid ?? '';
-      Project? fetchedProject =
+      dynamic fetchedProjectData =
           await FirebaseUtils.obtenerProyectoPorIdDesdeFirebase(
               userUid, widget.project.id);
 
-      if (fetchedProject != null) {
+      if (fetchedProjectData != null &&
+          fetchedProjectData is Map<String, dynamic>) {
+        Project fetchedProject = Project.fromJson(fetchedProjectData);
+
         List<Stage> stagesFromDatabase =
             await FirebaseUtils.getStagesFromDatabase(
                 userUid, widget.project.id);
@@ -55,20 +73,37 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
         }
 
         setState(() {
-          // Actualizando la interfaz con las etapas y tareas recuperadas
           widget.project = fetchedProject.copyWith(stages: stagesFromDatabase);
 
-          // Asignando las tareas recuperadas a las etapas correspondientes
           for (var stage in widget.project.stages) {
             if (tasksByStage.containsKey(stage.name)) {
               stage.tasks = tasksByStage[stage.name] ?? [];
             }
           }
         });
+
+        _saveStagesLocally(
+            stagesFromDatabase.map((stage) => stage.name).toList());
       }
     } catch (e) {
       print('Error al obtener detalles del proyecto: $e');
+      _getStagesLocally();
     }
+  }
+
+  void _saveStagesLocally(List<String> stages) async {
+    await LocalStorage.saveStagesLocally(stages);
+  }
+
+  void _getStagesLocally() async {
+    List<String> stages = await LocalStorage.getStagesLocally();
+    List<Stage> localStages = stages
+        .map((stageName) => Stage(id: stageName, name: stageName, tasks: []))
+        .toList();
+
+    setState(() {
+      widget.project = widget.project.copyWith(stages: localStages);
+    });
   }
 
   void _editSupervisor() async {
@@ -638,46 +673,47 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
         FirebaseUtils.saveBrief(userUid, widget.project.id, totalTasks,
             completedTasks, inProgressTasks, pendingTasks);
       }
+      // Mostrar el diálogo con el estado del proyecto
+      // ignore: use_build_context_synchronously
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (BuildContext context) {
+          return AlertDialog(
+            title: const Text('Estado del proyecto'),
+            content: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: <Widget>[
+                Text('Tareas Totales: $totalTasks'),
+                const Padding(
+                  padding: EdgeInsets.all(6.0),
+                ),
+                Text('Tareas Completadas: $completedTasks'),
+                const Padding(
+                  padding: EdgeInsets.all(6.0),
+                ),
+                Text('Tareas en Progreso: $inProgressTasks'),
+                const Padding(
+                  padding: EdgeInsets.all(6.0),
+                ),
+                Text('Tareas Pendientes: $pendingTasks'),
+              ],
+            ),
+            actions: <Widget>[
+              TextButton(
+                onPressed: () {
+                  Navigator.of(context).pop();
+                },
+                child: const Text('Cerrar'),
+              ),
+            ],
+          );
+        },
+      );
     } catch (e) {
       print('Error al guardar el brief en la base de datos: $e');
     }
-
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('Estado del proyecto'),
-          content: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: <Widget>[
-              Text('Tareas Totales: $totalTasks'),
-              const Padding(
-                padding: EdgeInsets.all(6.0),
-              ),
-              Text('Tareas Completadas: $completedTasks'),
-              const Padding(
-                padding: EdgeInsets.all(6.0),
-              ),
-              Text('Tareas en Progreso: $inProgressTasks'),
-              const Padding(
-                padding: EdgeInsets.all(6.0),
-              ),
-              Text('Tareas Pendientes: $pendingTasks'),
-            ],
-          ),
-          actions: <Widget>[
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-              child: const Text('Cerrar'),
-            ),
-          ],
-        );
-      },
-    );
   }
 
   @override
@@ -692,7 +728,7 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
           ),
           IconButton(
             icon: const Icon(Icons.delete),
-            onPressed: () {
+            onPressed: () async {
               widget.onDelete(widget.project);
               Navigator.pop(context);
             },
@@ -757,13 +793,15 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
                 ),
                 Expanded(
                   child: Text(
-                    _editedSupervisor,
+                    widget.project.supervisor,
                     style: const TextStyle(fontSize: 16),
                   ),
                 ),
                 IconButton(
                   icon: const Icon(Icons.edit),
-                  onPressed: _editSupervisor,
+                  onPressed: () {
+                    _editSupervisor();
+                  },
                 ),
               ],
             ),
@@ -781,9 +819,9 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
             const Padding(padding: EdgeInsets.all(4)),
             Expanded(
               child: ListView.builder(
-                itemCount: stagesFromDatabase.length,
+                itemCount: widget.project.stages.length,
                 itemBuilder: (context, index) {
-                  final stage = stagesFromDatabase[index];
+                  final stage = widget.project.stages[index];
                   return Card(
                     margin: const EdgeInsets.all(8.0),
                     child: Container(
@@ -837,7 +875,7 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
                               );
                             },
                           ),
-                          const Padding(padding: EdgeInsets.all(15))
+                          const Padding(padding: EdgeInsets.all(15)),
                         ],
                       ),
                     ),

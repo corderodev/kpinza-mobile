@@ -55,6 +55,22 @@ class Project {
           [],
     );
   }
+
+  factory Project.fromJson(Map<String, dynamic> json) {
+    return Project(
+      id: json['id'],
+      name: json['name'],
+      supervisor: json['supervisor'],
+      stages: (json['stages'] as List<dynamic>?)
+              ?.map((stage) => Stage.fromMap(stage))
+              .toList() ??
+          [],
+      tasks: (json['tasks'] as List<dynamic>?)
+              ?.map((task) => Task.fromMap(task))
+              .toList() ??
+          [],
+    );
+  }
 }
 
 class Stage {

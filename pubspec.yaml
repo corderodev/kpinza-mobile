@@ -18,6 +18,7 @@ dependencies:
   fl_chart: ^0.64.0
   cloud_firestore: ^4.13.3
   firebase_database: ^10.3.6
+  shared_preferences: ^2.2.2
 
 dev_dependencies:
   flutter_test:

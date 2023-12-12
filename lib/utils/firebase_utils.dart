@@ -271,14 +271,11 @@ class FirebaseUtils {
         .child('stages')
         .once();
 
-    // Verifica si la instantánea (snapshot) contiene datos antes de mapearlos
     if (stagesSnapshot != null && stagesSnapshot.snapshot.value != null) {
-      // Obtener el valor del snapshot y convertirlo en un mapa de datos
       Map<dynamic, dynamic>? stagesData =
           stagesSnapshot.snapshot.value as Map<dynamic, dynamic>?;
 
       if (stagesData != null) {
-        // Mapear el mapa de datos en una lista de etapas (Stage)
         List<Stage> stages = stagesData.entries
             .map<Stage>((entry) => Stage.fromMap(entry.value))
             .toList();
@@ -287,7 +284,6 @@ class FirebaseUtils {
       }
     }
 
-    // Si no hay datos o algo salió mal, devuelve una lista vacía o maneja el escenario como prefieras
     return [];
   }
 
