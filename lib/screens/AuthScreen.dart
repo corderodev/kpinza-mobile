@@ -72,6 +72,16 @@ class _AuthScreenState extends State<AuthScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
+            Column(
+              children: [
+                Image.asset(
+                  'assets/logo_kpinza.png',
+                  height: 100,
+                  width: 100,
+                ),
+              ],
+            ),
+            const Padding(padding: EdgeInsets.all(20)),
             Text(
               _isSignIn ? 'Inicio de sesión' : 'Registro de cuenta',
               style: const TextStyle(
