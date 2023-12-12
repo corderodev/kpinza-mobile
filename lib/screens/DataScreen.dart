@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:kpinza_mobile/class/Project.dart';
 import 'package:kpinza_mobile/screens/ProjectsMetricsScreen.dart';
+import 'package:kpinza_mobile/utils/firebase_utils.dart';
+import 'package:kpinza_mobile/screens/AuthScreen.dart';
 
 class DataScreen extends StatefulWidget {
   const DataScreen({Key? key}) : super(key: key);
@@ -20,40 +22,42 @@ class _DataScreenState extends State<DataScreen> {
   }
 
   void _fetchProjects() {
-    DatabaseReference projectsRef =
-        FirebaseDatabase.instance.ref().child('projects');
+    Stream<List<Project>> projectsStream =
+        FirebaseUtils.projectsStreamFromFirebase();
 
-    projectsRef.onValue.listen((event) {
-      if (event.snapshot.value != null) {
-        Map<dynamic, dynamic>? projectsMap =
-            event.snapshot.value as Map<dynamic, dynamic>?;
-
-        if (projectsMap != null) {
-          List<Project> fetchedProjects = [];
-
-          projectsMap.forEach((key, value) {
-            fetchedProjects.add(Project(
-                id: key,
-                name: value['name'],
-                supervisor: value['supervisor'],
-                tasks: []));
-          });
-
-          setState(() {
-            projects = fetchedProjects;
-          });
-        }
-      }
+    projectsStream.listen((List<Project> fetchedProjects) {
+      setState(() {
+        projects = fetchedProjects;
+      });
     }, onError: (Object? error) {
       print("Failed to fetch projects: $error");
+      showDialog(
+        context: context,
+        builder: (BuildContext context) {
+          return AlertDialog(
+            title: const Text('Error'),
+            content: const Text('Error al obtener la lista de proyectos.'),
+            actions: <Widget>[
+              TextButton(
+                onPressed: () {
+                  Navigator.of(context).pop();
+                },
+                child: const Text('Cerrar'),
+              ),
+            ],
+          );
+        },
+      );
     });
   }
 
   Future<void> _showProjectMetrics(Project project) async {
-    DatabaseReference statusRef =
-        FirebaseDatabase.instance.ref('projects/${project.id}/status');
-    DatabaseReference tasksRef =
-        FirebaseDatabase.instance.ref('projects/${project.id}/tasks');
+    String? userUid = UserGlobal.uid;
+
+    DatabaseReference statusRef = FirebaseDatabase.instance
+        .ref('users/$userUid/projects/${project.id}/brief');
+    DatabaseReference tasksRef = FirebaseDatabase.instance
+        .ref('users/$userUid/projects/${project.id}/tasks');
 
     statusRef.onValue.listen((event) {
       if (event.snapshot.value != null) {
@@ -137,10 +141,9 @@ class _DataScreenState extends State<DataScreen> {
           ),
           Expanded(
             child: ListView.builder(
-              itemCount: projects.length,
-              itemBuilder: (context, index) {
-                final project = projects[index];
-                if (project.tasks != null && project.tasks!.isNotEmpty) {
+                itemCount: projects.length,
+                itemBuilder: (context, index) {
+                  final project = projects[index];
                   return Card(
                     margin: const EdgeInsets.all(8.0),
                     child: ListTile(
@@ -150,11 +153,7 @@ class _DataScreenState extends State<DataScreen> {
                       },
                     ),
                   );
-                } else {
-                  return Container();
-                }
-              },
-            ),
+                }),
           ),
         ],
       ),
