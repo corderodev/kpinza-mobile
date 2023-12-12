@@ -15,7 +15,7 @@ class Project {
 
   Map<String, dynamic> toMap() {
     return {
-      'id': id,
+      'id': name,
       'name': name,
       'supervisor': supervisor,
       'stages': stages.map((stage) => stage.toMap()).toList(),
@@ -58,23 +58,28 @@ class Project {
 }
 
 class Stage {
+  String id;
   String name;
   List<Task> tasks;
 
-  Stage({required this.name, List<Task>? tasks}) : tasks = tasks ?? [];
+  Stage({required this.id, required this.name, List<Task>? tasks})
+      : tasks = tasks ?? [];
 
   Map<String, dynamic> toMap() {
     return {
+      'id': name,
       'name': name,
       'tasks': tasks.map((task) => task.toMap()).toList(),
     };
   }
 
   Stage copyWith({
+    String? id,
     String? name,
     List<Task>? tasks,
   }) {
     return Stage(
+      id: id ?? this.id,
       name: name ?? this.name,
       tasks: tasks ?? this.tasks,
     );
@@ -82,6 +87,7 @@ class Stage {
 
   static Stage fromMap(Map<String, dynamic> map) {
     return Stage(
+      id: map['id'],
       name: map['name'],
       tasks: (map['tasks'] as List<dynamic>?)
               ?.map((task) => Task.fromMap(task))
@@ -92,6 +98,7 @@ class Stage {
 }
 
 class Task {
+  String id;
   String name;
   String? responsable;
   String status;
@@ -101,8 +108,10 @@ class Task {
   String realTime;
   DateTime? realStartDate;
   DateTime? realDueDate;
+  String stageName;
 
   Task({
+    required this.id,
     required this.name,
     this.responsable,
     this.status = 'Pendiente',
@@ -112,10 +121,12 @@ class Task {
     required this.realTime,
     this.realStartDate,
     this.realDueDate,
+    required this.stageName,
   });
 
   Map<String, dynamic> toMap() {
     return {
+      'id': name,
       'name': name,
       'responsable': responsable,
       'status': status,
@@ -125,11 +136,13 @@ class Task {
       'realTime': realTime,
       'realStartDate': realStartDate?.toIso8601String(),
       'realDueDate': realDueDate?.toIso8601String(),
+      'stageName': stageName,
     };
   }
 
   static Task fromMap(Map<String, dynamic> map) {
     return Task(
+      id: map['id'],
       name: map['name'],
       responsable: map['responsable'],
       status: map['status'],
@@ -144,6 +157,7 @@ class Task {
       realDueDate: map['realDueDate'] != null
           ? DateTime.parse(map['realDueDate'])
           : null,
+      stageName: map['stageName'],
     );
   }
 }

@@ -179,9 +179,10 @@ class FirebaseUtils {
   static Future<void> saveStage(
       String userUid, String projectId, Stage stage) async {
     try {
-      final stageRef =
-          _database.child('users/$userUid/projects/$projectId/stages').push();
+      final stageRef = _database
+          .child('users/$userUid/projects/$projectId/stages/${stage.name}');
       await stageRef.set({
+        'id': stage.name,
         'name': stage.name,
         'tasks': stage.tasks.map((task) => task.toMap()).toList(),
       });
@@ -195,18 +196,19 @@ class FirebaseUtils {
       String userUid, String projectId, String stageId, Task task) async {
     try {
       final taskRef = _database
-          .child('users/$userUid/projects/$projectId/stages/$stageId/tasks')
-          .push();
+          .child('users/$userUid/projects/$projectId/tasks/${task.name}');
       await taskRef.set({
+        'id': task.name,
         'name': task.name,
         'responsable': task.responsable ?? '',
         'status': task.status,
-        'startDate': task.startDate.toString(),
-        'dueDate': task.dueDate.toString(),
+        'startDate': task.startDate?.toString(),
+        'dueDate': task.dueDate?.toString(),
         'estimatedTime': task.estimatedTime,
         'realTime': task.realTime,
-        'realStartDate': task.realStartDate.toString(),
-        'realDueDate': task.realDueDate.toString(),
+        'realStartDate': task.realStartDate?.toString(),
+        'realDueDate': task.realDueDate?.toString(),
+        'stageName': task.stageName,
       });
     } catch (e, stackTrace) {
       print('Error al guardar la tarea en Firebase: $e\n$stackTrace');
@@ -255,6 +257,58 @@ class FirebaseUtils {
     } catch (e, stackTrace) {
       print('Error al eliminar el proyecto: $e\n$stackTrace');
       throw e;
+    }
+  }
+
+  static Future<List<Stage>> getStagesFromDatabase(
+      String userUid, String projectName) async {
+    final stagesSnapshot = await FirebaseDatabase.instance
+        .ref()
+        .child('users')
+        .child(userUid)
+        .child('projects')
+        .child(projectName)
+        .child('stages')
+        .once();
+
+    // Verifica si la instantánea (snapshot) contiene datos antes de mapearlos
+    if (stagesSnapshot != null && stagesSnapshot.snapshot.value != null) {
+      // Obtener el valor del snapshot y convertirlo en un mapa de datos
+      Map<dynamic, dynamic>? stagesData =
+          stagesSnapshot.snapshot.value as Map<dynamic, dynamic>?;
+
+      if (stagesData != null) {
+        // Mapear el mapa de datos en una lista de etapas (Stage)
+        List<Stage> stages = stagesData.entries
+            .map<Stage>((entry) => Stage.fromMap(entry.value))
+            .toList();
+
+        return stages;
+      }
+    }
+
+    // Si no hay datos o algo salió mal, devuelve una lista vacía o maneja el escenario como prefieras
+    return [];
+  }
+
+  static Future<List<Task>> getTasksFromDatabase(
+      String userUid, String projectName, String stageName) async {
+    final tasksSnapshot = await FirebaseDatabase.instance
+        .ref()
+        .child('users')
+        .child(userUid)
+        .child('projects')
+        .child(projectName)
+        .child('tasks')
+        .once();
+
+    final tasksData = tasksSnapshot.snapshot.value;
+    if (tasksData != null && tasksData is Map<String, dynamic>) {
+      List<Task> tasks =
+          tasksData.values.map<Task>((data) => Task.fromMap(data)).toList();
+      return tasks;
+    } else {
+      return [];
     }
   }
 }

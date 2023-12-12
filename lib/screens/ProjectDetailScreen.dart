@@ -26,6 +26,9 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
   String _editedSupervisor = '';
   String? selectedStage;
 
+  List<Stage> stagesFromDatabase = [];
+  List<Task> tasksFromDatabase = [];
+
   @override
   void initState() {
     super.initState();
@@ -34,15 +37,33 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
 
   void obtenerDetallesProyecto() async {
     try {
-      String? userUid = UserGlobal.uid;
+      String userUid = UserGlobal.uid ?? '';
       Project? fetchedProject =
           await FirebaseUtils.obtenerProyectoPorIdDesdeFirebase(
-              userUid ?? '', widget.project.id);
+              userUid, widget.project.id);
+
       if (fetchedProject != null) {
+        List<Stage> stagesFromDatabase =
+            await FirebaseUtils.getStagesFromDatabase(
+                userUid, widget.project.id);
+
+        Map<String, List<Task>> tasksByStage = {};
+        for (var stage in stagesFromDatabase) {
+          List<Task> tasks = await FirebaseUtils.getTasksFromDatabase(
+              userUid, widget.project.id, stage.name);
+          tasksByStage[stage.name] = tasks;
+        }
+
         setState(() {
-          widget.project = fetchedProject;
-          _nameController.text = widget.project.name;
-          _editedSupervisor = widget.project.supervisor;
+          // Actualizando la interfaz con las etapas y tareas recuperadas
+          widget.project = fetchedProject.copyWith(stages: stagesFromDatabase);
+
+          // Asignando las tareas recuperadas a las etapas correspondientes
+          for (var stage in widget.project.stages) {
+            if (tasksByStage.containsKey(stage.name)) {
+              stage.tasks = tasksByStage[stage.name] ?? [];
+            }
+          }
         });
       }
     } catch (e) {
@@ -119,7 +140,7 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
 
   void _createStage(String stageName) async {
     try {
-      final newStage = Stage(name: stageName, tasks: []);
+      final newStage = Stage(id: stageName, name: stageName, tasks: []);
       String userUid = UserGlobal.uid ?? '';
       String projectId = widget.project.id;
 
@@ -162,6 +183,10 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
     );
   }
 
+  String getStageIdByName(String stageName) {
+    return stageName;
+  }
+
   void _createTask(
     String taskName,
     String stageName,
@@ -175,6 +200,7 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
     DateTime? selectedRealDueDate,
   ) async {
     final newTask = Task(
+      id: taskName,
       name: taskName,
       responsable: responsable,
       status: status,
@@ -184,6 +210,7 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
       realTime: realTime,
       realStartDate: selectedRealStartDate,
       realDueDate: selectedRealDueDate,
+      stageName: getStageIdByName(stageName),
     );
 
     try {
@@ -754,9 +781,9 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
             const Padding(padding: EdgeInsets.all(4)),
             Expanded(
               child: ListView.builder(
-                itemCount: widget.project.stages.length,
+                itemCount: stagesFromDatabase.length,
                 itemBuilder: (context, index) {
-                  final stage = widget.project.stages[index];
+                  final stage = stagesFromDatabase[index];
                   return Card(
                     margin: const EdgeInsets.all(8.0),
                     child: Container(
